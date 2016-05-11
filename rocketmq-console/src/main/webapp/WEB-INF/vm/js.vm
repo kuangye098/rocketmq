@@ -1,0 +1,7 @@
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>-->
+<script src="$root/js/jquery-1.10.2.min.js"></script>
+<script src="$root/js/bootstrap.min.js"></script>
+<script src="$root/js/docs.min.js"></script>

@@ -1,0 +1,66 @@
+<!-- 遍历table -->
+#macro ( table $table )
+	#if($table)
+        	<table class="table table-bordered table-hover">
+				#if($!table.thead)
+					<thead>
+						<tr>
+						#foreach($th in $!table.thead)
+                            <th>$th</th>
+						#end
+						</tr>
+                    </thead>
+				#end
+                  <tbody> 
+        			#foreach($tr in $!table.tbodyData)
+        				<tr>
+        					#foreach($td in $tr)
+        						<td>
+									#if($td.getClass().getName() == "com.alibaba.rocketmq.common.Table")
+										<!-- recursive -->
+										#table($td)
+									#else
+										$td
+									#end
+								</td>
+        					#end
+        				</tr>
+        			#end
+                  </tbody>
+            </table>
+			<!-- properties-->
+			#if($!table.extData && $!table.extData.size() > 0)
+				#foreach($entry in $!table.extData.entrySet())
+					<p>$entry.key:$entry:value</p>	
+				#end
+			#end
+	#end
+#end
+
+<!-- 动态生成form表单 -->
+#macro ( form $options $action )
+	<table class="table table-bordered table-hover">  
+          <tbody>  
+    		<form action="$action" method="post">
+    			#foreach($option in $options)
+        			<tr>
+                       <th>$option.longOpt:</th>
+                       <td>
+    					<input class="form-inline span2" type="text" name="$option.longOpt" 
+							#if($!option.getValue() && $!option.getValue() != "") value='$!option.getValue()' #end/>
+    					#if($option.required)
+    						<font color="red">*</font>
+    					#end&nbsp;&nbsp;<span>$option.description</span></td>
+                    </tr>
+    			#end
+    			<tr>
+                    <td colspan="2">
+    					<center>
+    						<button class="btn btn-success" type="submit" >Submit</button>
+                        </center>
+    				</td>
+                </tr>
+            </form>
+          </tbody>
+    </table>
+#end

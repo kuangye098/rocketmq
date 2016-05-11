@@ -1,0 +1,28 @@
+   #form($options $action)
+   #if($pc)
+   <div class="container theme-showcase">
+		<table class="table table-bordered table-hover">  
+              <thead>  
+                <tr>  
+                  <th>id</th>
+				  <th>ClientId</th>
+				  <th>ClientAddr</th>
+				  <th>Language</th>
+				  <th>Version</th>
+                </tr>  
+              </thead>  
+              <tbody> 
+				#foreach($conn in $pc.connectionSet)
+					<tr>
+                        <td>$!{velocityCount}</td>
+						<td>$conn.clientId</td>
+						<td>$conn.ClientAddr</td>
+						<td>$conn.language</td>
+						<td>$conn.version</td>
+					</tr>
+				#end
+              </tbody>
+        </table>
+   </div>
+   #end
+ 

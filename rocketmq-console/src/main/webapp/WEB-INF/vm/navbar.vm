@@ -1,0 +1,59 @@
+ <!-- Fixed navbar -->
+    <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+          <div class="container">
+                <div class="navbar-header">
+                  <a class="navbar-brand" href="/">RocketMQ Console</a>
+                </div>
+                <div class="navbar-collapse collapse">
+                      <ul class="nav navbar-nav">
+                            <li #if($cluster_flag)class="$cluster_flag"#end><a href="$root/cluster/list.do">Cluster</a></li>
+                            <li #if($topic_flag)class="$topic_flag"#end><a href="$root/topic/list.do">Topic</a></li>
+                            <li class="dropdown $!connection_flag" >
+                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">Connection<b class="caret"></b></a>
+                                 <ul class="dropdown-menu">
+                                    <li><a href="$root/connection/consumerConnection.do">ConsumerConnection</a></li>
+                                    <li><a href="$root/connection/producerConnection.do">ProducerConnection</a></li>
+                                 </ul>
+                            </li>
+                			<li class="dropdown $!namesrv_flag" >
+        							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Nameserv<b class="caret"></b></a>
+        							<ul class="dropdown-menu">
+        								<li><a href="$root/namesrv/updateKvConfig.do">UpdateKvConfig</a></li>
+                                        <li><a href="$root/namesrv/deleteKvConfig.do">DeleteKvConfig</a></li>
+        								<li><a href="$root/namesrv/getProjectGroup.do">GetProjectGroup</a></li>
+        								<li><a href="$root/namesrv/updateProjectGroup.do">UpdateProjectGroup</a></li>
+        								<li><a href="$root/namesrv/deleteProjectGroup.do">DeleteProjectGroup</a></li>
+        								<li><a href="$root/namesrv/wipeWritePerm.do">WipeWritePerm</a></li>
+        							 </ul>
+        					</li>
+    						
+                			<li class="dropdown $!message_flag" >
+        							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Message<b class="caret"></b></a>
+        							<ul class="dropdown-menu">
+        								<li><a href="$root/message/queryMsgById.do">QueryMsgById</a></li>
+                                        <li><a href="$root/message/queryMsgByKey.do">QueryMsgByKey</a></li>
+        								<li><a href="$root/message/queryMsgByOffset.do">QueryMsgByOffset</a></li>
+        							 </ul>
+        					</li>
+        					<li class="dropdown $!broker_flag">
+                                  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Broker <b class="caret"></b></a>
+                                  <ul class="dropdown-menu">
+                                    <li><a href="$root/broker/brokerStats.do">BrokerStats</a></li>
+                                    <li><a href="$root/broker/updateBrokerConfig.do">UpdateBrokerConfig</a></li>
+                                  </ul>
+                            </li>
+                            <li class="dropdown $!offset_flag">
+                                 <a href="$root/offset/resetOffsetByTime.do">Offset</a>
+                            </li>
+							<li class="dropdown $!consumer_flag">
+                                  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Consumer <b class="caret"></b></a>
+                                  <ul class="dropdown-menu">
+                                    <li><a href="$root/consumer/consumerProgress.do">ConsumerProgress</a></li>
+                                    <li><a href="$root/consumer/deleteSubGroup.do">DeleteSubGroup</a></li>
+									<li><a href="$root/consumer/updateSubGroup.do">UpdateSubGroup</a></li>
+                                  </ul>
+                            </li>
+                      </ul>
+                </div><!--/.nav-collapse -->
+          </div>
+    </div>

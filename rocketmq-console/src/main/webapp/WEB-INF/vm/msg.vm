@@ -1,0 +1,10 @@
+#if($alertMsg)
+<div class="alert alert-danger">
+    <strong>$!alertMsg</strong>
+</div>
+#elseif($alertTrue)
+	<div class="alert alert-success">
+        <strong>Well done!</strong>
+</div>
+#end
+

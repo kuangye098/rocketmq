@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+	#parse("head.vm")
+  </head>
+  <body role="document">
+    #parse("navbar.vm")
+	#parse("msg.vm")
+    <div class="container theme-showcase" role="main">
+    	#table($table)
+        #parse("foot.vm")
+    </div>
+	#parse("js.vm")
+  </body>
+</html>
