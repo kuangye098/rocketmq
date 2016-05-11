@@ -1,0 +1,49 @@
+#form($options $action)
+  #if($cc)
+  <div class="container theme-showcase">
+		<table class="table table-bordered table-hover">  
+              <thead>  
+                <tr>  
+                  <th>id</th>
+				  <th>ClientId</th>
+				  <th>ClientAddr</th>
+				  <th>Language</th>
+				  <th>Version</th>
+                </tr>  
+              </thead>  
+              <tbody> 
+				#foreach($conn in $cc.connectionSet)
+					<tr>
+                        <td>$!{velocityCount}</td>
+						<td>$conn.clientId</td>
+						<td>$conn.ClientAddr</td>
+						<td>$conn.language</td>
+						<td>$conn.version</td>
+					</tr>
+				#end
+              </tbody>
+        </table>
+        <p>Below is subscription:</p>
+		<table class="table table-bordered table-hover">  
+              <thead>  
+                <tr>  
+                  <th>id</th>
+				  <th>Topic</th>
+				  <th>SubExpression</th>
+                </tr>  
+              </thead>  
+              <tbody> 
+				#foreach($entry in $cc.subscriptionTable.entrySet())
+					<tr>
+                        <td>$!{velocityCount}</td>
+						<td>$entry.value.topic</td>
+						<td>$entry.value.subString</td>
+					</tr>
+				#end
+              </tbody>
+        </table>
+        <p>ConsumeType: $cc.consumeType</p>
+		<p>MessageModel: $cc.messageModel</p>
+		<p>ConsumeFromWhere: $cc.consumeFromWhere</p>
+   </div>
+   #end

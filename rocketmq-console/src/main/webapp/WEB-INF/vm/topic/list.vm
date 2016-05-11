@@ -1,0 +1,54 @@
+
+      <div class="container">
+      <button class="btn btn-sm btn-success" type="button" onclick="add()">Add</button>
+      </div>
+	  <p>&nbsp;</p>
+      <div class="container theme-showcase"><!-- /container  -->
+    		<table class="table table-bordered table-hover">  
+                  <thead>  
+                    <tr>  
+                      <th>Topic</th>
+    				  <th>operations</th>
+                    </tr>  
+                  </thead>  
+                  <tbody>
+    			  #foreach($tr in $!table.tbodyData)
+    					<tr>
+    						#foreach($topicName in $tr)
+    						  <td>$topicName</td>
+    						  <td> 
+    							<button class="btn btn-sm btn-info" type="button" onclick="stat('$topicName')">Stat</button>
+    							&nbsp;&nbsp;  
+    							<button class="btn btn-sm btn-info" type="button" onclick="route('$topicName')">Route</button>
+    							&nbsp;&nbsp;  
+    							<button class="btn btn-sm btn-info" type="button" onclick="upd('$topicName')">Update</button>
+    							&nbsp;&nbsp; 
+                                <button class="btn btn-sm btn-danger" type="button" onclick="del('$topicName')">Delete</button>
+    						  </td>
+    						 #end
+        				</tr>
+    			  #end
+                  </tbody>
+            </table>
+      </div><!-- container-->
+      <script language="javascript">
+    	function add() {
+    		window.location.href = "add.do";
+    	}
+    	
+      	function stat(topicName) {
+    		window.location.href = "stats.do?topic=" + topicName;
+    	}
+    	
+    	function route(topicName) {
+    		window.location.href = "route.do?topic=" + topicName;
+    	}
+    	
+    	function del(topicName) {
+    		window.location.href = "delete.do?topic=" + topicName;
+    	}
+    
+    	function upd(topicName) {
+    		window.location.href = "update.do?topic=" + topicName;
+    	}
+    </script>
