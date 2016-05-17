@@ -1,9 +1,0 @@
-# Package Files #
-*.jar
-*.war
-*.ear
-target
-bin
-
-.idea
-*.iml
