@@ -359,7 +359,9 @@ public class CommitLog {
                 queueOffset,// 7
                 keys,// 8
                 sysFlag,// 9
-                preparedTransactionOffset// 10
+                0L,// 10
+                preparedTransactionOffset,// 11
+                null// 12
             );
         }
         catch (BufferUnderflowException e) {
@@ -575,7 +577,10 @@ public class CommitLog {
                  * Transaction
                  */
                 msg.getSysFlag(),// 9
-                msg.getPreparedTransactionOffset());// 10
+                msg.getQueueOffset(), // 10
+                msg.getPreparedTransactionOffset(),// 11
+                msg.getProperty(MessageConst.PROPERTY_PRODUCER_GROUP)// 12
+                    );
 
             this.defaultMessageStore.putDispatchRequest(dispatchRequest);
 
