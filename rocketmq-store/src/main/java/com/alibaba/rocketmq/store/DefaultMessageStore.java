@@ -1711,6 +1711,32 @@ public class DefaultMessageStore implements MessageStore {
                     case MessageSysFlag.TransactionRollbackType:
                         break;
                     }
+                    
+                    
+                    // 2、更新Transaction State Table
+                    if (req.getProducerGroup() != null) {
+                        switch (tranType) {
+                        case MessageSysFlag.TransactionNotType:
+                            break;
+                        case MessageSysFlag.TransactionPreparedType:
+                            // 将Prepared事务记录下来
+                            DefaultMessageStore.this.getTransactionStateService().appendPreparedTransaction(//
+                                req.getCommitLogOffset(),//
+                                req.getMsgSize(),//
+                                (int) (req.getStoreTimestamp() / 1000),//
+                                req.getProducerGroup().hashCode());
+                            break;
+                        case MessageSysFlag.TransactionCommitType:
+                        case MessageSysFlag.TransactionRollbackType:
+                            DefaultMessageStore.this.getTransactionStateService().updateTransactionState(//
+                                req.getTranStateTableOffset(),//
+                                req.getPreparedTransactionOffset(),//
+                                req.getProducerGroup().hashCode(),//
+                                tranType//
+                                );
+                            break;
+                        }
+                    }
                 }
 
                 if (DefaultMessageStore.this.getMessageStoreConfig().isMessageIndexEnable()) {
