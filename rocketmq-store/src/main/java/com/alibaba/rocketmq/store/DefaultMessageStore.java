@@ -248,6 +248,9 @@ public class DefaultMessageStore implements MessageStore {
 
             // load Consume Queue
             result = result && this.loadConsumeQueue();
+            
+            // load 事务模块
+            result = result && this.transactionStateService.load();
 
             if (result) {
                 this.storeCheckpoint =
@@ -374,6 +377,7 @@ public class DefaultMessageStore implements MessageStore {
             this.reputMessageService.start();
         }
 
+        this.transactionStateService.start();
         this.haService.start();
 
         this.createTempFile();
