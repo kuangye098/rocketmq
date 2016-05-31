@@ -17,6 +17,7 @@ package com.alibaba.rocketmq.broker.client;
 
 import io.netty.channel.Channel;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -180,7 +181,36 @@ public class ProducerManager {
                 }
             }
             else {
-                log.warn("ProducerManager registerProducer lock timeout");
+                log.warn("ProducerManager registerProducer groupChannelLock timeout");
+            }
+            
+            boolean bClientChannelInfoFound = false;
+            
+            if (this.hashcodeChannelLock.tryLock(LockTimeoutMillis, TimeUnit.MILLISECONDS)) {
+                try {
+                	List<ClientChannelInfo> channelList = this.hashcodeChannelTable.get(group);
+                    if (null == channelList) {
+                    	channelList = new ArrayList<ClientChannelInfo>();
+                        this.hashcodeChannelTable.put(group.hashCode(), channelList);
+                    }
+
+                    bClientChannelInfoFound = channelList.contains(clientChannelInfo);
+                    if (!bClientChannelInfoFound) {
+                    	channelList.add(clientChannelInfo);
+                        log.info("new producer connected, group: {} group hashcode: {} channel: {}", group,
+                        		group.hashCode(),    clientChannelInfo.toString());
+                    }
+                }
+                finally {
+                    this.hashcodeChannelLock.unlock();
+                }
+
+                if (bClientChannelInfoFound) {
+                    clientChannelInfoFound.setLastUpdateTimestamp(System.currentTimeMillis());
+                }
+            }
+            else {
+                log.warn("ProducerManager registerProducer hashcodeChannelLock timeout");
             }
         }
         catch (InterruptedException e) {
@@ -212,7 +242,32 @@ public class ProducerManager {
                 }
             }
             else {
-                log.warn("ProducerManager unregisterProducer lock timeout");
+                log.warn("ProducerManager unregisterProducer groupChannelLock timeout");
+            }
+            
+            
+            if (this.hashcodeChannelLock.tryLock(LockTimeoutMillis, TimeUnit.MILLISECONDS)) {
+                try {
+                	List<ClientChannelInfo> channelList = this.hashcodeChannelTable.get(group);
+                    if (null != channelList && !channelList.isEmpty()) {
+                        boolean bRemove = channelList.remove(clientChannelInfo.getChannel());
+                        if (bRemove) {
+                            log.info("unregister a producer[{}] from hashcodeChannelTable {}", group,
+                                clientChannelInfo.toString());
+                        }
+
+                        if (channelList.isEmpty()) {
+                            this.hashcodeChannelTable.remove(group);
+                            log.info("unregister a producer group[{}] from hashcodeChannelTable", group);
+                        }
+                    }
+                }
+                finally {
+                    this.hashcodeChannelLock.unlock();
+                }
+            }
+            else {
+                log.warn("ProducerManager unregisterProducer hashcodeChannelLock timeout");
             }
         }
         catch (InterruptedException e) {
