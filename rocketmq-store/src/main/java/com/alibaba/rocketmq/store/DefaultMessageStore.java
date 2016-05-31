@@ -33,6 +33,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
@@ -90,11 +92,11 @@ public class DefaultMessageStore implements MessageStore {
     // 预分配MapedFile对象服务
     private final AllocateMapedFileService allocateMapedFileService;
     // 从物理队列解析消息重新发送到逻辑队列
-    private final ReputMessageService reputMessageService;
+    private ReputMessageService reputMessageService;
     // HA服务
     private final HAService haService;
     // 定时服务
-    private final ScheduleMessageService scheduleMessageService;
+    private ScheduleMessageService scheduleMessageService;
     // 分布式事务服务
     private final TransactionStateService transactionStateService;
     // 运行时数据统计
@@ -115,6 +117,8 @@ public class DefaultMessageStore implements MessageStore {
     private final ScheduledExecutorService scheduledExecutorService = Executors
         .newSingleThreadScheduledExecutor(new ThreadFactoryImpl("StoreScheduledThread"));
     private final BrokerStatsManager brokerStatsManager;
+    //存储角色
+    private final AtomicInteger atomicBrokerRole = new  AtomicInteger();
 
 
     public DefaultMessageStore(final MessageStoreConfig messageStoreConfig,
@@ -137,6 +141,7 @@ public class DefaultMessageStore implements MessageStore {
         this.indexService = new IndexService(this);
         this.haService = new HAService(this);
         this.transactionStateService = new TransactionStateService(this);
+        this.atomicBrokerRole.set(this.messageStoreConfig.getBrokerRole().ordinal());
 
         switch (this.messageStoreConfig.getBrokerRole()) {
         case SLAVE:
@@ -153,7 +158,7 @@ public class DefaultMessageStore implements MessageStore {
             this.reputMessageService = null;
             this.scheduleMessageService = null;
         }
-
+        
         // load过程依赖此服务，所以提前启动
         this.allocateMapedFileService.start();
         this.dispatchMessageService.start();
@@ -2033,6 +2038,39 @@ public class DefaultMessageStore implements MessageStore {
         }
         return false;
     }
+    
+    /*
+     * 主备切换
+     */
+    public void brokerRoleSwitch(String sBrokerRole) {
+    	
+   	    try{
+   	    	BrokerRole brokerRole = BrokerRole.valueOf(BrokerRole.class,sBrokerRole);
+   	        
+   	        if(!atomicBrokerRole.compareAndSet(BrokerRole.SLAVE.ordinal(),
+   	        											brokerRole.ordinal())){
+   	    	   	log.warn("broker switch refused,current brokerRole {}", sBrokerRole);
+   	    	   	return;
+   	        }
+   	        //设置新的角色
+   	    	this.messageStoreConfig.setBrokerRole(brokerRole);
+   		   	log.info("switch slave to master role {}", brokerRole);
+   		   	//主角色的内存命中
+   	        int ratio = messageStoreConfig.getAccessMessageInMemoryMaxRatio() + 10;
+   	        this.messageStoreConfig.setAccessMessageInMemoryMaxRatio(ratio);
+   		   	log.info("reputMessageService is ready shutdown..,reputFromOffset={}"+
+   		   	                                                     reputMessageService.getReputFromOffset());
+   		    //停止反推服务
+   		   	this.reputMessageService.shutdown();
+	        this.reputMessageService = null;
+   		   	log.info("reputMessageService shutdown successful!");
+   	        //启动定时消息服务
+   	        this.scheduleMessageService = new ScheduleMessageService(this);
+   	        this.scheduleMessageService.start();
+   	    }catch(Exception e){
+   	    	
+   	    }
+   }
 
 
     public BrokerStatsManager getBrokerStatsManager() {
