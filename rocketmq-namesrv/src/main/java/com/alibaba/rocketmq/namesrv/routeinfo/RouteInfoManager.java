@@ -176,7 +176,7 @@ public class RouteInfoManager {
                         //无法判断主broker是还没有启动还是已经宕机
                         Boolean bMainInit = mainBrokerInitTable.put(brokerName, true);
                         if(null == bMainInit){
-                        	log.info("new brokerName={} init ",brokerName);
+                        	log.info("new main [brokerName={}] init ",brokerName);
                         }
                     }
                 }
@@ -213,10 +213,12 @@ public class RouteInfoManager {
                         }
                     }
                     else {
-                        Boolean bMainInit = mainBrokerInitTable.put(brokerName, true);
-                    	if(bMainInit != null && bMainInit){  //如果已经初始化一遍，则进行主从切换
+                        Boolean bMainInit = mainBrokerInitTable.get(brokerName);
+                     	if(bMainInit != null && bMainInit){  //如果已经初始化一遍，则进行主从切换
+                        	log.warn("master broker was crash, now will do switch a new master broker!");
                     		result.setMainSwitchFlag(MixAll.MAIN_SWITCH_FLAG);
-                    	}
+                    		removeLeaveBrokerInfo(brokerName,brokerAddr,brokerId);	//移除备broker的一些信息
+                     	}
                     }
                 }
             }
@@ -231,6 +233,27 @@ public class RouteInfoManager {
         return result;
     }
 
+    /*
+     * 从broker升级为主时，清除原来的垃圾数据
+     */
+    private void removeLeaveBrokerInfo(final String brokerName,final String brokerAddr,final Long brokerId){
+    	
+		BrokerData brokerData = this.brokerAddrTable.get(brokerName);
+	    if (null != brokerData) {
+	        String addr = brokerData.getBrokerAddrs().remove(brokerId);
+	        log.info("removeLeaveBrokerInfo, remove addr from brokerAddrTable {}, {} , {}", //
+	            (addr != null ? "OK" : "Failed"),//
+	            brokerAddr,brokerId//
+            );
+	        
+		    if (brokerData.getBrokerAddrs().isEmpty()) {
+		         this.brokerAddrTable.remove(brokerName);
+ 		         log.info("removeLeaveBrokerInfo, remove name from brokerAddrTable OK, {}", //
+		                 brokerName//
+		         );
+		     }
+	     }
+    }
 
     /**
      * 判断Topic配置信息是否发生变更
@@ -349,13 +372,14 @@ public class RouteInfoManager {
                 BrokerData brokerData = this.brokerAddrTable.get(brokerName);
                 if (null != brokerData) {
                     String addr = brokerData.getBrokerAddrs().remove(brokerId);
-                    log.info("unregisterBroker, remove addr from brokerAddrTable {}, {}", //
+                    log.info("unregisterBroker, remove addr from brokerAddrTable {}, {} , {}", //
                         (addr != null ? "OK" : "Failed"),//
-                        brokerAddr//
+                        brokerAddr,brokerId//
                     );
 
                     if (brokerData.getBrokerAddrs().isEmpty()) {
                         this.brokerAddrTable.remove(brokerName);
+                        this.mainBrokerInitTable.put(brokerName, null);//清空brokerName后,则重置为未初始化
                         log.info("unregisterBroker, remove name from brokerAddrTable OK, {}", //
                             brokerName//
                         );

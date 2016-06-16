@@ -404,6 +404,7 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
 
         responseHeader.setHaServerAddr(result.getHaServerAddr());
         responseHeader.setMasterAddr(result.getMasterAddr());
+        responseHeader.setMainSwitchFlag(result.getMainSwitchFlag());
 
         // 获取顺序消息 topic 列表
         byte[] jsonValue =
