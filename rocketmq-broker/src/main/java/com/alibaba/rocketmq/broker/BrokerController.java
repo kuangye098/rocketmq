@@ -593,6 +593,8 @@ public class BrokerController {
             topicConfigWrapper,//
             this.filterServerManager.buildNewFilterServerList(),//
             oneway);
+        
+        log.info("registerBrokerResult.getMainSwitchFlag()"+registerBrokerResult.getMainSwitchFlag());
 
         if (registerBrokerResult != null) {
             if (this.updateMasterHAServerAddrPeriodically && registerBrokerResult.getHaServerAddr() != null) {
@@ -606,7 +608,7 @@ public class BrokerController {
             }
             
             if(registerBrokerResult.getMainSwitchFlag()==MixAll.MAIN_SWITCH_FLAG
-            		                             && brokerConfig.isEnableBrokerRoleSwitch()){
+             		                             && brokerConfig.isEnableBrokerRoleSwitch()){
             	brokerRoleSwitch(brokerConfig.getSwitchBrokerRole());
             }
         }
@@ -812,8 +814,10 @@ public class BrokerController {
 		try{
 	//		synchronized(this){  方法里有同步，故无需同步
 				brokerRole = BrokerRole.valueOf(BrokerRole.class,sBrokerRole);    
-		        if(BrokerRole.SLAVE == this.messageStoreConfig.getBrokerRole()){
-		    	   	log.warn("broker switch refused,current brokerRole {}.", sBrokerRole);
+		        if(BrokerRole.SLAVE == this.messageStoreConfig.getBrokerRole() 
+		        		&& (brokerRole == BrokerRole.ASYNC_MASTER || brokerRole == BrokerRole.SYNC_MASTER)){
+		    	   	log.warn("broker switch refused,current brokerRole {},"
+		    	   			+ " will switch brokerRole {}", this.messageStoreConfig.getBrokerRole() , sBrokerRole);
 		    	   	return ;
 		        }
 		        //设置新的角色

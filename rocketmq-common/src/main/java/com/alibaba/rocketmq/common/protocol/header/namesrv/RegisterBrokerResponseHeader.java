@@ -14,6 +14,8 @@ public class RegisterBrokerResponseHeader implements CommandCustomHeader {
     private String haServerAddr;
     @CFNullable
     private String masterAddr;
+    @CFNullable
+    private int mainSwitchFlag;
 
 
     @Override
@@ -39,4 +41,15 @@ public class RegisterBrokerResponseHeader implements CommandCustomHeader {
     public void setMasterAddr(String masterAddr) {
         this.masterAddr = masterAddr;
     }
+
+
+	public int getMainSwitchFlag() {
+		return mainSwitchFlag;
+	}
+
+
+	public void setMainSwitchFlag(int mainSwitchFlag) {
+		this.mainSwitchFlag = mainSwitchFlag;
+	}
+    
 }
