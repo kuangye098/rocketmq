@@ -72,6 +72,14 @@ public class BrokerConfig {
     // 是否从地址服务器寻找Name Server地址，正式发布后，默认值为false
     @ImportantField
     private boolean fetchNamesrvAddrByAddressServer = false;
+    
+    // 是否启用主从broker自动切换，默认值为false
+    @ImportantField
+    private boolean enableBrokerRoleSwitch = false;
+    
+    // 启用主从broker切换后,使用何种主角色，默认值ASYNC_MASTER
+    @ImportantField
+    private String switchBrokerRole = "ASYNC_MASTER";
 
     // 发送消息对应的线程池阻塞队列size
     private int sendThreadPoolQueueCapacity = 100000;
@@ -385,4 +393,25 @@ public class BrokerConfig {
     public void setOffsetCheckInSlave(boolean offsetCheckInSlave) {
         this.offsetCheckInSlave = offsetCheckInSlave;
     }
+
+
+	public boolean isEnableBrokerRoleSwitch() {
+		return enableBrokerRoleSwitch;
+	}
+
+
+	public void setEnableBrokerRoleSwitch(boolean enableBrokerRoleSwitch) {
+		this.enableBrokerRoleSwitch = enableBrokerRoleSwitch;
+	}
+
+
+	public String getSwitchBrokerRole() {
+		return switchBrokerRole;
+	}
+
+
+	public void setSwitchBrokerRole(String switchBrokerRole) {
+		this.switchBrokerRole = switchBrokerRole;
+	}
+    
 }

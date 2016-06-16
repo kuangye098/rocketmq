@@ -87,6 +87,9 @@ public class MixAll {
     public static final String RETRY_GROUP_TOPIC_PREFIX = "%RETRY%";
     // 为每个Consumer Group建立一个默认的Topic，前缀 + GroupName，用来保存重试多次都失败，接下来不再重试的消息
     public static final String DLQ_GROUP_TOPIC_PREFIX = "%DLQ%";
+    //主从切换标志
+    public static final int MAIN_SWITCH_FLAG = 1;
+
 
 
     public static String getRetryTopic(final String consumerGroup) {
@@ -374,7 +377,8 @@ public class MixAll {
         Method[] methods = object.getClass().getMethods();
         for (Method method : methods) {
             String mn = method.getName();
-            if (mn.startsWith("set")) {
+            //fix eclipse 在字段中前缀有enable的时候，会自动化生成前缀以"is"的赋值方法
+            if (mn.startsWith("set") || mn.startsWith("is")) {
                 try {
                     String tmp = mn.substring(4);
                     String first = mn.substring(3, 4);

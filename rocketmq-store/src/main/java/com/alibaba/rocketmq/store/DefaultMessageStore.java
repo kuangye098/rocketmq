@@ -33,8 +33,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
@@ -117,8 +115,6 @@ public class DefaultMessageStore implements MessageStore {
     private final ScheduledExecutorService scheduledExecutorService = Executors
         .newSingleThreadScheduledExecutor(new ThreadFactoryImpl("StoreScheduledThread"));
     private final BrokerStatsManager brokerStatsManager;
-    //存储角色
-    private final AtomicInteger atomicBrokerRole = new  AtomicInteger();
 
 
     public DefaultMessageStore(final MessageStoreConfig messageStoreConfig,
@@ -141,7 +137,6 @@ public class DefaultMessageStore implements MessageStore {
         this.indexService = new IndexService(this);
         this.haService = new HAService(this);
         this.transactionStateService = new TransactionStateService(this);
-        this.atomicBrokerRole.set(this.messageStoreConfig.getBrokerRole().ordinal());
 
         switch (this.messageStoreConfig.getBrokerRole()) {
         case SLAVE:
@@ -2042,24 +2037,15 @@ public class DefaultMessageStore implements MessageStore {
     /*
      * 主备切换
      */
-    public void brokerRoleSwitch(String sBrokerRole) {
+    @Override
+    public boolean storeServiceSwitch(String sBrokerRole) {
     	
    	    try{
-   	    	BrokerRole brokerRole = BrokerRole.valueOf(BrokerRole.class,sBrokerRole);
-   	        
-   	        if(!atomicBrokerRole.compareAndSet(BrokerRole.SLAVE.ordinal(),
-   	        											brokerRole.ordinal())){
-   	    	   	log.warn("broker switch refused,current brokerRole {}", sBrokerRole);
-   	    	   	return;
-   	        }
-   	        //设置新的角色
-   	    	this.messageStoreConfig.setBrokerRole(brokerRole);
-   		   	log.info("switch slave to master role {}", brokerRole);
    		   	//主角色的内存命中
    	        int ratio = messageStoreConfig.getAccessMessageInMemoryMaxRatio() + 10;
    	        this.messageStoreConfig.setAccessMessageInMemoryMaxRatio(ratio);
-   		   	log.info("reputMessageService is ready shutdown..,reputFromOffset={}"+
-   		   	                                                     reputMessageService.getReputFromOffset());
+   		   	log.info("reputMessageService is ready shutdown..,reputFromOffset={},CurrentAccessMessageInMemoryMaxRatio={}."+
+   		   	         reputMessageService.getReputFromOffset(),messageStoreConfig.getAccessMessageInMemoryMaxRatio());
    		    //停止反推服务
    		   	this.reputMessageService.shutdown();
 	        this.reputMessageService = null;
@@ -2067,9 +2053,12 @@ public class DefaultMessageStore implements MessageStore {
    	        //启动定时消息服务
    	        this.scheduleMessageService = new ScheduleMessageService(this);
    	        this.scheduleMessageService.start();
+   		   	log.info("scheduleMessageService start successful!");
+   		   	return true;
    	    }catch(Exception e){
-   	    	
+   	    	log.error("storeServiceSwitch Exception", e);
    	    }
+   	    return false;
    }
 
 

@@ -10,6 +10,7 @@ import com.alibaba.rocketmq.common.protocol.body.KVTable;
 public class RegisterBrokerResult {
     private String haServerAddr;
     private String masterAddr;
+    private int mainSwitchFlag;
     private KVTable kvTable;
 
 
@@ -33,7 +34,17 @@ public class RegisterBrokerResult {
     }
 
 
-    public KVTable getKvTable() {
+    public int getMainSwitchFlag() {
+		return mainSwitchFlag;
+	}
+
+
+	public void setMainSwitchFlag(int mainSwitchFlag) {
+		this.mainSwitchFlag = mainSwitchFlag;
+	}
+
+
+	public KVTable getKvTable() {
         return kvTable;
     }
 
