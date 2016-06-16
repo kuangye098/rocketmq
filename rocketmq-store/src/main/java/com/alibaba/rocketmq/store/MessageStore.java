@@ -202,4 +202,10 @@ public interface MessageStore {
      * 判断消息是否在磁盘
      */
     public boolean checkInDiskByConsumeOffset(final String topic, final int queueId, long consumeOffset);
+
+
+    /**
+     * 切换主从服务
+     */
+    public boolean storeServiceSwitch(String sBrokerRole);
 }

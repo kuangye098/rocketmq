@@ -25,6 +25,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -126,6 +127,7 @@ public class BrokerController {
 
     private final BrokerStatsManager brokerStatsManager;
     private InetSocketAddress storeHost;
+	private ScheduledFuture<?> slaveSyncScheduledFuture;
 
 
     public BrokerController(//
@@ -291,7 +293,7 @@ public class BrokerController {
                     this.updateMasterHAServerAddrPeriodically = true;
                 }
 
-                this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+                slaveSyncScheduledFuture = this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
                     @Override
                     public void run() {
@@ -305,18 +307,7 @@ public class BrokerController {
                 }, 1000 * 10, 1000 * 60, TimeUnit.MILLISECONDS);
             }
             else {
-                this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        try {
-                            BrokerController.this.printMasterAndSlaveDiff();
-                        }
-                        catch (Exception e) {
-                            log.error("schedule printMasterAndSlaveDiff error.", e);
-                        }
-                    }
-                }, 1000 * 10, 1000 * 60, TimeUnit.MILLISECONDS);
+            	addPrintMasterAndSlaveDiffTask();
             }
         }
 
@@ -613,6 +604,11 @@ public class BrokerController {
             if (checkOrderConfig) {
                 this.getTopicConfigManager().updateOrderTopicConfig(registerBrokerResult.getKvTable());
             }
+            
+            if(registerBrokerResult.getMainSwitchFlag()==MixAll.MAIN_SWITCH_FLAG
+            		                             && brokerConfig.isEnableBrokerRoleSwitch()){
+            	brokerRoleSwitch(brokerConfig.getSwitchBrokerRole());
+            }
         }
     }
 
@@ -809,5 +805,48 @@ public class BrokerController {
 
 	public DefaultTransactionCheckExecuter getDefaultTransactionCheckExecuter() {
 		return defaultTransactionCheckExecuter;
+	}
+	
+	public void brokerRoleSwitch(String sBrokerRole){
+		BrokerRole brokerRole = null;
+		try{
+	//		synchronized(this){  方法里有同步，故无需同步
+				brokerRole = BrokerRole.valueOf(BrokerRole.class,sBrokerRole);    
+		        if(BrokerRole.SLAVE == this.messageStoreConfig.getBrokerRole()){
+		    	   	log.warn("broker switch refused,current brokerRole {}.", sBrokerRole);
+		    	   	return ;
+		        }
+		        //设置新的角色
+		    	this.messageStoreConfig.setBrokerRole(brokerRole);
+	//		}
+		   	log.info("switch slave to master role {}", brokerRole);
+			
+			if(!messageStore.storeServiceSwitch(sBrokerRole)){
+				log.error("messageStore service swithch failed!");
+	 		}
+			//取消从主broker同步数据
+			slaveSyncScheduledFuture.cancel(true);
+			this.updateMasterHAServerAddrPeriodically = false;
+			//增加一个打印主从消费进度的差值
+			addPrintMasterAndSlaveDiffTask();
+		}catch(Exception e){
+			log.error("brokerRoleSwitch Exception",e);
+ 		}
+	}
+	
+	public void addPrintMasterAndSlaveDiffTask() {
+		this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    BrokerController.this.printMasterAndSlaveDiff();
+                }
+                catch (Exception e) {
+                    log.error("schedule printMasterAndSlaveDiff error.", e);
+                }
+            }
+        }, 1000 * 10, 1000 * 60, TimeUnit.MILLISECONDS);
+		log.info("add a printMasterAndSlaveDiff task.");
 	}
 }

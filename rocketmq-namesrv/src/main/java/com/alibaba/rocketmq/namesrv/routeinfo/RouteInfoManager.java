@@ -58,6 +58,7 @@ public class RouteInfoManager {
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final HashMap<String/* topic */, List<QueueData>> topicQueueTable;
     private final HashMap<String/* brokerName */, BrokerData> brokerAddrTable;
+    private final HashMap<String/* brokerName */, Boolean> mainBrokerInitTable;
     private final HashMap<String/* clusterName */, Set<String/* brokerName */>> clusterAddrTable;
     private final HashMap<String/* brokerAddr */, BrokerLiveInfo> brokerLiveTable;
     private final HashMap<String/* brokerAddr */, List<String>/* Filter Server */> filterServerTable;
@@ -66,6 +67,7 @@ public class RouteInfoManager {
     public RouteInfoManager() {
         this.topicQueueTable = new HashMap<String, List<QueueData>>(1024);
         this.brokerAddrTable = new HashMap<String, BrokerData>(128);
+        this.mainBrokerInitTable = new HashMap<String,Boolean>(128);
         this.clusterAddrTable = new HashMap<String, Set<String>>(32);
         this.brokerLiveTable = new HashMap<String, BrokerLiveInfo>(256);
         this.filterServerTable = new HashMap<String, List<String>>(256);
@@ -116,7 +118,7 @@ public class RouteInfoManager {
 
 
     /**
-     * @return 如果是slave，则返回master的ha地址
+     * @return 如果是slave，则返回master的ha地址,可能返回是否主备切换
      */
     public RegisterBrokerResult registerBroker(//
             final String clusterName,// 1
@@ -155,8 +157,8 @@ public class RouteInfoManager {
                     this.brokerAddrTable.put(brokerName, brokerData);
                 }
                 String oldAddr = brokerData.getBrokerAddrs().put(brokerId, brokerAddr);
-                registerFirst = registerFirst || (null == oldAddr);
-
+                registerFirst = registerFirst || (null == oldAddr);                
+                
                 // 更新Topic信息
                 if (null != topicConfigWrapper //
                         && MixAll.MASTER_ID == brokerId) {
@@ -169,6 +171,12 @@ public class RouteInfoManager {
                                 TopicConfig topicConfig = tcTable.get(topic);
                                 this.createAndUpdateQueueData(brokerName, topicConfig);
                             }
+                        }
+                        //表示主broker已经被初始化一次了，此为了解决启用主备切换功能，如果备broker先于主broker启动时
+                        //无法判断主broker是还没有启动还是已经宕机
+                        Boolean bMainInit = mainBrokerInitTable.put(brokerName, true);
+                        if(null == bMainInit){
+                        	log.info("new brokerName={} init ",brokerName);
                         }
                     }
                 }
@@ -203,6 +211,12 @@ public class RouteInfoManager {
                             result.setHaServerAddr(brokerLiveInfo.getHaServerAddr());
                             result.setMasterAddr(masterAddr);
                         }
+                    }
+                    else {
+                        Boolean bMainInit = mainBrokerInitTable.put(brokerName, true);
+                    	if(bMainInit != null && bMainInit){  //如果已经初始化一遍，则进行主从切换
+                    		result.setMainSwitchFlag(MixAll.MAIN_SWITCH_FLAG);
+                    	}
                     }
                 }
             }
