@@ -160,8 +160,9 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
             requestHeader.getBrokerId(), // 4
             requestHeader.getHaServerAddr(),// 5
             registerBrokerBody.getTopicConfigSerializeWrapper(), // 6
-            registerBrokerBody.getFilterServerList(),//
-            ctx.channel()// 7
+            registerBrokerBody.getFilterServerList(),//7
+            requestHeader.getMaxPhyOffset(),//8
+            ctx.channel()// 9
             );
 
         responseHeader.setHaServerAddr(result.getHaServerAddr());
@@ -399,8 +400,9 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
             requestHeader.getBrokerId(), // 4
             requestHeader.getHaServerAddr(),// 5
             topicConfigWrapper, // 6
-            null,//
-            ctx.channel()// 7
+            null,//7
+            requestHeader.getMaxPhyOffset(),//8
+            ctx.channel()// 9
             );
 
         responseHeader.setHaServerAddr(result.getHaServerAddr());

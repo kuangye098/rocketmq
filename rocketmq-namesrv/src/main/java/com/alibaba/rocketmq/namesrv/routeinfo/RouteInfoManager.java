@@ -128,7 +128,8 @@ public class RouteInfoManager {
             final String haServerAddr,// 5
             final TopicConfigSerializeWrapper topicConfigWrapper,// 6
             final List<String> filterServerList, // 7
-            final Channel channel// 8
+            final Long maxPhyOffset,//8
+            final Channel channel// 9
     ) {
         RegisterBrokerResult result = new RegisterBrokerResult();
         try {
@@ -187,9 +188,11 @@ public class RouteInfoManager {
                         System.currentTimeMillis(), //
                         topicConfigWrapper.getDataVersion(),//
                         channel, //
-                        haServerAddr));
+                        haServerAddr,
+                        maxPhyOffset));
                 if (null == prevBrokerLiveInfo) {
-                    log.info("new broker registerd, {} HAServer: {}", brokerAddr, haServerAddr);
+                    log.info("new broker registerd, {} HAServer: {} , maxPhyOffset: {}", 
+                    		                     brokerAddr, haServerAddr, maxPhyOffset);
                 }
 
                 // 更新Filter Server列表
@@ -214,7 +217,8 @@ public class RouteInfoManager {
                     }
                     else {
                         Boolean bMainInit = mainBrokerInitTable.get(brokerName);
-                     	if(bMainInit != null && bMainInit){  //如果已经初始化一遍，则进行主从切换
+                     	if(bMainInit != null && bMainInit //如果已经初始化一遍，则进行主从切换
+                     			 && isCurrentBrokerUpgrade(brokerName, brokerAddr)){ 
                         	log.warn("master broker was crash, now will do switch a new master broker!");
                     		result.setMainSwitchFlag(MixAll.MAIN_SWITCH_FLAG);
                     		removeLeaveBrokerInfo(brokerName,brokerAddr,brokerId);	//移除备broker的一些信息
@@ -253,6 +257,45 @@ public class RouteInfoManager {
 		         );
 		     }
 	     }
+    }
+    
+    /**
+     * 判断当前从broker是否合适升级为主broker 
+     * 主要根据注册时,上报的MaxPhyOffset的大小来判断
+     * @param brokerName
+     * @param brokerAddr
+     * @return
+     */
+    private boolean isCurrentBrokerUpgrade(String brokerName,String brokerAddr ){
+    	BrokerData brokerData = this.brokerAddrTable.get(brokerName);
+    	HashMap<Long, String> brokerAddrs  = brokerData.getBrokerAddrs();
+    	BrokerLiveInfo brokerLiveInfo = brokerLiveTable.get(brokerAddr);
+    	Long curMaxPhyOffset = -1L;
+    	Long tmpMaxPhyOffset = -1L;
+    	
+    	//如果只有一个从broker了，那直接返回
+    	if(brokerAddrs != null && brokerAddrs.size() == 1){
+    		return true;
+    	}
+    	
+    	if(brokerLiveInfo != null){
+    	    curMaxPhyOffset = brokerLiveInfo.getMaxPhyOffset();
+    	}
+     	
+    	Iterator<Entry<Long, String>> iterator = brokerAddrs.entrySet().iterator();
+    	while(iterator.hasNext()){
+    		Entry<Long, String> entry = iterator.next();
+    		if(entry.getKey() != MixAll.MASTER_ID){
+    			brokerLiveInfo = brokerLiveTable.get(entry.getValue());
+    			if(brokerLiveInfo != null){
+    				tmpMaxPhyOffset = brokerLiveInfo.getMaxPhyOffset();
+    	    	    if(tmpMaxPhyOffset.compareTo(curMaxPhyOffset) > 0){
+    	    	    	return false;
+    	    	    }
+    			}
+    		}
+    	}
+		return true;
     }
 
     /**
@@ -918,14 +961,16 @@ class BrokerLiveInfo {
     private DataVersion dataVersion;
     private Channel channel;
     private String haServerAddr;
+    private long maxPhyOffset;
 
 
     public BrokerLiveInfo(long lastUpdateTimestamp, DataVersion dataVersion, Channel channel,
-            String haServerAddr) {
+            String haServerAddr, long maxPhyOffset) {
         this.lastUpdateTimestamp = lastUpdateTimestamp;
         this.dataVersion = dataVersion;
         this.channel = channel;
         this.haServerAddr = haServerAddr;
+        this.maxPhyOffset = maxPhyOffset;
     }
 
 
@@ -967,11 +1012,21 @@ class BrokerLiveInfo {
     public void setHaServerAddr(String haServerAddr) {
         this.haServerAddr = haServerAddr;
     }
+    
+
+    public long getMaxPhyOffset() {
+		return maxPhyOffset;
+	}
 
 
-    @Override
+	public void setMaxPhyOffset(long maxPhyOffset) {
+		this.maxPhyOffset = maxPhyOffset;
+	}
+
+
+	@Override
     public String toString() {
         return "BrokerLiveInfo [lastUpdateTimestamp=" + lastUpdateTimestamp + ", dataVersion=" + dataVersion
-                + ", channel=" + channel + ", haServerAddr=" + haServerAddr + "]";
+                + ", channel=" + channel + ", haServerAddr=" + haServerAddr + "]" + ", maxPhyOffset=" + maxPhyOffset + "]";
     }
 }

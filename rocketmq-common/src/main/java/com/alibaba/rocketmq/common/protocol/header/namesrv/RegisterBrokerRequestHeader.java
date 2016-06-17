@@ -22,6 +22,8 @@ public class RegisterBrokerRequestHeader implements CommandCustomHeader {
     private String haServerAddr;
     @CFNotNull
     private Long brokerId;
+    @CFNotNull
+    private Long maxPhyOffset;
 
 
     @Override
@@ -77,4 +79,15 @@ public class RegisterBrokerRequestHeader implements CommandCustomHeader {
     public void setBrokerId(Long brokerId) {
         this.brokerId = brokerId;
     }
+
+
+	public Long getMaxPhyOffset() {
+		return maxPhyOffset;
+	}
+
+
+	public void setMaxPhyOffset(Long maxPhyOffset) {
+		this.maxPhyOffset = maxPhyOffset;
+	}
+
 }

@@ -592,6 +592,7 @@ public class BrokerController {
             this.getHAServerAddr(), //
             topicConfigWrapper,//
             this.filterServerManager.buildNewFilterServerList(),//
+            this.messageStore.getMaxPhyOffset(),
             oneway);
         
         
