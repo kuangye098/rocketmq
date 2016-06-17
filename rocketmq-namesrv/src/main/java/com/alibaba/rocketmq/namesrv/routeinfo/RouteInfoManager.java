@@ -233,7 +233,7 @@ public class RouteInfoManager {
         return result;
     }
 
-    /*
+    /**
      * 从broker升级为主时，清除原来的垃圾数据
      */
     private void removeLeaveBrokerInfo(final String brokerName,final String brokerAddr,final Long brokerId){

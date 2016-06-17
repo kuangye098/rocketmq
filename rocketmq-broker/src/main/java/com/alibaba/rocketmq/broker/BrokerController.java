@@ -594,8 +594,7 @@ public class BrokerController {
             this.filterServerManager.buildNewFilterServerList(),//
             oneway);
         
-        log.info("registerBrokerResult.getMainSwitchFlag()"+registerBrokerResult.getMainSwitchFlag());
-
+        
         if (registerBrokerResult != null) {
             if (this.updateMasterHAServerAddrPeriodically && registerBrokerResult.getHaServerAddr() != null) {
                 this.messageStore.updateHaMasterAddress(registerBrokerResult.getHaServerAddr());
@@ -814,14 +813,16 @@ public class BrokerController {
 		try{
 	//		synchronized(this){  方法里有同步，故无需同步
 				brokerRole = BrokerRole.valueOf(BrokerRole.class,sBrokerRole);    
-		        if(BrokerRole.SLAVE == this.messageStoreConfig.getBrokerRole() 
-		        		&& (brokerRole == BrokerRole.ASYNC_MASTER || brokerRole == BrokerRole.SYNC_MASTER)){
+		        if(!(BrokerRole.SLAVE == this.messageStoreConfig.getBrokerRole() 
+		        		&& (brokerRole == BrokerRole.ASYNC_MASTER || brokerRole == BrokerRole.SYNC_MASTER))){
 		    	   	log.warn("broker switch refused,current brokerRole {},"
 		    	   			+ " will switch brokerRole {}", this.messageStoreConfig.getBrokerRole() , sBrokerRole);
 		    	   	return ;
 		        }
 		        //设置新的角色
 		    	this.messageStoreConfig.setBrokerRole(brokerRole);
+		    	//设置ID为0
+		    	this.brokerConfig.setBrokerId(MixAll.MASTER_ID);
 	//		}
 		   	log.info("switch slave to master role {}", brokerRole);
 			
