@@ -176,6 +176,10 @@ public class HAService {
     public WaitNotifyObject getWaitNotifyObject() {
         return waitNotifyObject;
     }
+    
+    public long getReportSlaveMaxOffset() {
+		return haClient.currentReportedOffset;
+    }
 
     class AcceptSocketService extends ServiceThread {
         private ServerSocketChannel serverSocketChannel;

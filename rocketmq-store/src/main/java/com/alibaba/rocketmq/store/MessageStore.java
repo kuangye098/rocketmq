@@ -207,5 +207,5 @@ public interface MessageStore {
     /**
      * 切换主从服务
      */
-    public boolean storeServiceSwitch(String sBrokerRole);
+    public boolean storeServiceSwitch(String brokerRole);
 }

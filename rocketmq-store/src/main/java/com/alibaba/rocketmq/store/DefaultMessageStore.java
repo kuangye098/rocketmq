@@ -186,7 +186,7 @@ public class DefaultMessageStore implements MessageStore {
         switch (this.messageStoreConfig.getBrokerRole()) {
         case SLAVE:
         	/**
-        	 * chen.si slave模式，需要重放master的消息；但是不需要处理 定时消息， 全部由重放完成
+        	 *  slave模式，需要重放master的消息；但是不需要处理 定时消息， 全部由重放完成
         	 */
             this.reputMessageService = new ReputMessageService();
             this.scheduleMessageService = null;
@@ -194,7 +194,7 @@ public class DefaultMessageStore implements MessageStore {
         case ASYNC_MASTER:
         case SYNC_MASTER:
         	/**
-        	 * chen.si master模式，需要处理定时消息，但是不需要重放功能
+        	 *  master模式，需要处理定时消息，但是不需要重放功能
         	 */
             this.reputMessageService = null;
             this.scheduleMessageService = new ScheduleMessageService(this);
@@ -2038,13 +2038,13 @@ public class DefaultMessageStore implements MessageStore {
      * 主备切换
      */
     @Override
-    public boolean storeServiceSwitch(String sBrokerRole) {
+    public boolean storeServiceSwitch(String brokerRole) {
     	
    	    try{
    		   	//主角色的内存命中
    	        int ratio = messageStoreConfig.getAccessMessageInMemoryMaxRatio() + 10;
    	        this.messageStoreConfig.setAccessMessageInMemoryMaxRatio(ratio);
-   		   	log.info("reputMessageService is ready shutdown..,reputFromOffset={},CurrentAccessMessageInMemoryMaxRatio={}."+
+   		   	log.info("reputMessageService is ready shutdown..,reputFromOffset={},CurrentAccessMessageInMemoryMaxRatio={}.",
    		   	         reputMessageService.getReputFromOffset(),messageStoreConfig.getAccessMessageInMemoryMaxRatio());
    		    //停止反推服务
    		   	this.reputMessageService.shutdown();
