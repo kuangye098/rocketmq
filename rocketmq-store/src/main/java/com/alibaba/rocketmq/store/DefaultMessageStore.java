@@ -1189,6 +1189,8 @@ public class DefaultMessageStore implements MessageStore {
             catch (InterruptedException e) {
             }
         }
+        // 恢复事务模块
+        this.transactionStateService.recoverStateTable(lastExitOK);
 
         this.recoverTopicQueueTable();
     }
