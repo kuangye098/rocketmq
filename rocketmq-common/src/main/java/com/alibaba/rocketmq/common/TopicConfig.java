@@ -1,17 +1,18 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.common;
 
@@ -19,19 +20,15 @@ import com.alibaba.rocketmq.common.constant.PermName;
 
 
 /**
- * Topic配置
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
+ * @author shijia.wxr
  */
 public class TopicConfig {
-    public static int DefaultReadQueueNums = 16;
-    public static int DefaultWriteQueueNums = 16;
-
     private static final String SEPARATOR = " ";
-
+    public static int defaultReadQueueNums = 16;
+    public static int defaultWriteQueueNums = 16;
     private String topicName;
-    private int readQueueNums = DefaultReadQueueNums;
-    private int writeQueueNums = DefaultWriteQueueNums;
+    private int readQueueNums = defaultReadQueueNums;
+    private int writeQueueNums = defaultWriteQueueNums;
     private int perm = PermName.PERM_READ | PermName.PERM_WRITE;
     private TopicFilterType topicFilterType = TopicFilterType.SINGLE_TAG;
     private int topicSysFlag = 0;
@@ -170,20 +167,34 @@ public class TopicConfig {
         this.order = isOrder;
     }
 
-
     @Override
-    public boolean equals(Object obj) {
-        TopicConfig other = (TopicConfig) obj;
-        if (other != null) {
-            return this.topicName.equals(other.topicName) && this.readQueueNums == other.readQueueNums
-                    && this.writeQueueNums == other.writeQueueNums && this.perm == other.perm
-                    && this.topicFilterType == other.topicFilterType
-                    && this.topicSysFlag == other.topicSysFlag && this.order == other.order;
-        }
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
-        return false;
+        final TopicConfig that = (TopicConfig) o;
+
+        if (readQueueNums != that.readQueueNums) return false;
+        if (writeQueueNums != that.writeQueueNums) return false;
+        if (perm != that.perm) return false;
+        if (topicSysFlag != that.topicSysFlag) return false;
+        if (order != that.order) return false;
+        if (topicName != null ? !topicName.equals(that.topicName) : that.topicName != null) return false;
+        return topicFilterType == that.topicFilterType;
+
     }
 
+    @Override
+    public int hashCode() {
+        int result = topicName != null ? topicName.hashCode() : 0;
+        result = 31 * result + readQueueNums;
+        result = 31 * result + writeQueueNums;
+        result = 31 * result + perm;
+        result = 31 * result + (topicFilterType != null ? topicFilterType.hashCode() : 0);
+        result = 31 * result + topicSysFlag;
+        result = 31 * result + (order ? 1 : 0);
+        return result;
+    }
 
     @Override
     public String toString() {

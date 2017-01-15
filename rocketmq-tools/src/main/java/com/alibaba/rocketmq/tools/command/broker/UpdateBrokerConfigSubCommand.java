@@ -1,39 +1,36 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.tools.command.broker;
-
-import java.util.Properties;
-import java.util.Set;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
 
 import com.alibaba.rocketmq.remoting.RPCHook;
 import com.alibaba.rocketmq.srvutil.ServerUtil;
 import com.alibaba.rocketmq.tools.admin.DefaultMQAdminExt;
 import com.alibaba.rocketmq.tools.command.CommandUtil;
 import com.alibaba.rocketmq.tools.command.SubCommand;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+
+import java.util.Properties;
+import java.util.Set;
 
 
 /**
- * 更新Broker配置文件
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2013-10-20
+ * @author shijia.wxr
  */
 public class UpdateBrokerConfigSubCommand implements SubCommand {
 
@@ -89,11 +86,10 @@ public class UpdateBrokerConfigSubCommand implements SubCommand {
                 defaultMQAdminExt.start();
 
                 defaultMQAdminExt.updateBrokerConfig(brokerAddr, properties);
-                System.out.printf("update broker config success, %s\n", brokerAddr);
+                System.out.printf("update broker config success, %s%n", brokerAddr);
                 return;
 
-            }
-            else if (commandLine.hasOption('c')) {
+            } else if (commandLine.hasOption('c')) {
                 String clusterName = commandLine.getOptionValue('c').trim();
 
                 defaultMQAdminExt.start();
@@ -101,18 +97,20 @@ public class UpdateBrokerConfigSubCommand implements SubCommand {
                 Set<String> masterSet =
                         CommandUtil.fetchMasterAddrByClusterName(defaultMQAdminExt, clusterName);
                 for (String brokerAddr : masterSet) {
-                    defaultMQAdminExt.updateBrokerConfig(brokerAddr, properties);
-                    System.out.printf("update broker config success, %s\n", brokerAddr);
+                    try {
+                        defaultMQAdminExt.updateBrokerConfig(brokerAddr, properties);
+                        System.out.printf("update broker config success, %s%n", brokerAddr);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
                 return;
             }
 
             ServerUtil.printCommandLineHelp("mqadmin " + this.commandName(), options);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             defaultMQAdminExt.shutdown();
         }
     }

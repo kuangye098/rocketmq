@@ -1,20 +1,36 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.broker.transaction;
-
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,10 +43,7 @@ import com.alibaba.rocketmq.store.transaction.TransactionCheckExecuter;
 
 
 /**
- * 存储层回调此接口，用来主动回查Producer的事务状态
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2013-7-26
+ * @author shijia.wxr
  */
 public class DefaultTransactionCheckExecuter implements TransactionCheckExecuter {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BrokerLoggerName);
@@ -45,7 +58,6 @@ public class DefaultTransactionCheckExecuter implements TransactionCheckExecuter
     @Override
     public void gotoCheck(int producerGroupHashCode, long tranStateTableOffset, long commitLogOffset,
             int msgSize) {
-        // 第一步、查询Producer
         final ClientChannelInfo clientChannelInfo =
                 this.brokerController.getProducerManager().pickProducerChannelRandomly(producerGroupHashCode);
         if (null == clientChannelInfo) {
@@ -54,8 +66,7 @@ public class DefaultTransactionCheckExecuter implements TransactionCheckExecuter
             return;
         }
 
-        // 第二步、查询消息
-        SelectMapedBufferResult selectMapedBufferResult =
+         SelectMapedBufferResult selectMapedBufferResult =
                 this.brokerController.getMessageStore().selectOneMessageByOffset(commitLogOffset, msgSize);
         if (null == selectMapedBufferResult) {
             log.warn(
@@ -64,7 +75,6 @@ public class DefaultTransactionCheckExecuter implements TransactionCheckExecuter
             return;
         }
 
-        // 第三步、向Producer发起请求
         final CheckTransactionStateRequestHeader requestHeader = new CheckTransactionStateRequestHeader();
         requestHeader.setCommitLogOffset(commitLogOffset);
         requestHeader.setTranStateTableOffset(tranStateTableOffset);

@@ -1,20 +1,36 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 /*
  * @author yubao.fyb@taoboa.com
  * @version $id$
  */
 package com.alibaba.rocketmq.client.consumer.loadbalance;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.alibaba.rocketmq.client.consumer.AllocateMessageQueueStrategy;
 import com.alibaba.rocketmq.client.consumer.rebalance.AllocateMessageQueueAveragely;
 import com.alibaba.rocketmq.client.consumer.rebalance.AllocateMessageQueueAveragelyByCircle;
 import com.alibaba.rocketmq.common.message.MessageQueue;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -27,33 +43,14 @@ public class AllocateMessageQueueAveragelyTest {
     private List<MessageQueue> messageQueueList;
     private List<String> consumerIdList;
 
-
-    public void createMessageQueueList(int size) {
-        messageQueueList = new ArrayList<MessageQueue>(size);
-        for (int i = 0; i < size; i++) {
-            MessageQueue mq = new MessageQueue(topic, "brokerName", i);
-            messageQueueList.add(mq);
-        }
-    }
-
-
-    public void createConsumerIdList(int size) {
-        consumerIdList = new ArrayList<String>(size);
-        for (int i = 0; i < size; i++) {
-            consumerIdList.add(String.valueOf(i));
-        }
-    }
-
-
     @Before
     public void init() {
         allocateMessageQueueAveragely = new AllocateMessageQueueAveragely();
         topic = "topic_test";
     }
 
-
     @Test
-    public void testConsumer1() { // consumerList大小为1
+    public void testConsumer1() {
         currentCID = "0";
         createConsumerIdList(1);
         createMessageQueueList(5);
@@ -64,154 +61,20 @@ public class AllocateMessageQueueAveragelyTest {
         Assert.assertEquals(result.containsAll(getMessageQueueList()), true);
     }
 
-
-    @Test
-    public void testConsumer2() { // consumerList大小为2
-        currentCID = "1";
-        createConsumerIdList(2);
-        createMessageQueueList(5);
-        List<MessageQueue> result =
-                allocateMessageQueueAveragely.allocate("", currentCID, messageQueueList, consumerIdList);
-        printMessageQueue(result, "testConsumer2");
-        Assert.assertEquals(result.size(), 3);
-        Assert.assertEquals(result.containsAll(getMessageQueueList().subList(2, 5)), true);
-
+    public void createConsumerIdList(int size) {
+        consumerIdList = new ArrayList<String>(size);
+        for (int i = 0; i < size; i++) {
+            consumerIdList.add(String.valueOf(i));
+        }
     }
 
-
-    @Test
-    public void testConsumer3CurrentCID0() { // consumerList大小为3
-        currentCID = "0";
-        createConsumerIdList(3);
-        createMessageQueueList(5);
-        List<MessageQueue> result =
-                allocateMessageQueueAveragely.allocate("", currentCID, messageQueueList, consumerIdList);
-        printMessageQueue(result, "testConsumer3CurrentCID0");
-        Assert.assertEquals(result.size(), 1);
-        Assert.assertEquals(result.containsAll(getMessageQueueList().subList(0, 1)), true);
+    public void createMessageQueueList(int size) {
+        messageQueueList = new ArrayList<MessageQueue>(size);
+        for (int i = 0; i < size; i++) {
+            MessageQueue mq = new MessageQueue(topic, "brokerName", i);
+            messageQueueList.add(mq);
+        }
     }
-
-
-    @Test
-    public void testConsumer3CurrentCID1() { // consumerList大小为3
-        currentCID = "1";
-        createConsumerIdList(3);
-        createMessageQueueList(5);
-        List<MessageQueue> result =
-                allocateMessageQueueAveragely.allocate("", currentCID, messageQueueList, consumerIdList);
-        printMessageQueue(result, "testConsumer3CurrentCID1");
-        Assert.assertEquals(result.size(), 1);
-        Assert.assertEquals(result.containsAll(getMessageQueueList().subList(1, 2)), true);
-    }
-
-
-    @Test
-    public void testConsumer3CurrentCID2() { // consumerList大小为3
-        currentCID = "2";
-        createConsumerIdList(3);
-        createMessageQueueList(5);
-        List<MessageQueue> result =
-                allocateMessageQueueAveragely.allocate("", currentCID, messageQueueList, consumerIdList);
-        printMessageQueue(result, "testConsumer3CurrentCID2");
-        Assert.assertEquals(result.size(), 3);
-        Assert.assertEquals(result.containsAll(getMessageQueueList().subList(2, 5)), true);
-    }
-
-
-    @Test
-    public void testConsumer4() { // consumerList大小为4
-        currentCID = "1";
-        createConsumerIdList(4);
-        createMessageQueueList(5);
-        List<MessageQueue> result =
-                allocateMessageQueueAveragely.allocate("", currentCID, messageQueueList, consumerIdList);
-        printMessageQueue(result, "testConsumer4");
-        Assert.assertEquals(result.size(), 1);
-        Assert.assertEquals(result.containsAll(getMessageQueueList().subList(1, 2)), true);
-    }
-
-
-    @Test
-    public void testConsumer5() { // consumerList大小为5
-        currentCID = "1";
-        createConsumerIdList(5);
-        createMessageQueueList(5);
-        List<MessageQueue> result =
-                allocateMessageQueueAveragely.allocate("", currentCID, messageQueueList, consumerIdList);
-        printMessageQueue(result, "testConsumer5");
-        Assert.assertEquals(result.size(), 1);
-        Assert.assertEquals(result.containsAll(getMessageQueueList().subList(1, 2)), true);
-    }
-
-
-    @Test
-    public void testConsumer6() { // consumerList大小为6
-        currentCID = "1";
-        createConsumerIdList(2);
-        createMessageQueueList(6);
-        List<MessageQueue> result =
-                allocateMessageQueueAveragely.allocate("", currentCID, messageQueueList, consumerIdList);
-        printMessageQueue(result, "testConsumer");
-        Assert.assertEquals(result.size(), 3);
-        Assert.assertEquals(result.containsAll(getMessageQueueList().subList(3, 6)), true);
-    }
-
-
-    @Test
-    public void testCurrentCIDNotExists() { // CurrentCID不存在
-        currentCID = String.valueOf(Integer.MAX_VALUE);
-        createConsumerIdList(2);
-        createMessageQueueList(6);
-        List<MessageQueue> result =
-                allocateMessageQueueAveragely.allocate("", currentCID, messageQueueList, consumerIdList);
-        printMessageQueue(result, "testCurrentCIDNotExists");
-        Assert.assertEquals(result.size(), 0);
-    }
-
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testCurrentCIDIllegalArgument() { // currentCID是空
-        createConsumerIdList(2);
-        createMessageQueueList(6);
-        allocateMessageQueueAveragely.allocate("", "", getMessageQueueList(), getConsumerIdList());
-    }
-
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testMessageQueueIllegalArgument() { // MessageQueue为空
-        currentCID = "0";
-        createConsumerIdList(2);
-        allocateMessageQueueAveragely.allocate("", currentCID, null, getConsumerIdList());
-    }
-
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testConsumerIdIllegalArgument() { // ConsumerIdList为空
-        currentCID = "0";
-        createMessageQueueList(6);
-        allocateMessageQueueAveragely.allocate("", currentCID, getMessageQueueList(), null);
-    }
-
-
-    public List<MessageQueue> getMessageQueueList() {
-        return messageQueueList;
-    }
-
-
-    public void setMessageQueueList(List<MessageQueue> messageQueueList) {
-        this.messageQueueList = messageQueueList;
-    }
-
-
-    public List<String> getConsumerIdList() {
-        return consumerIdList;
-    }
-
-
-    public void setConsumerIdList(List<String> consumerIdList) {
-        this.consumerIdList = consumerIdList;
-    }
-
 
     public void printMessageQueue(List<MessageQueue> messageQueueList, String name) {
         if (messageQueueList == null || messageQueueList.size() < 1)
@@ -223,6 +86,138 @@ public class AllocateMessageQueueAveragelyTest {
         System.out.println(name + ".......................................end");
     }
 
+    public List<MessageQueue> getMessageQueueList() {
+        return messageQueueList;
+    }
+
+    public void setMessageQueueList(List<MessageQueue> messageQueueList) {
+        this.messageQueueList = messageQueueList;
+    }
+
+    @Test
+    public void testConsumer2() {
+        currentCID = "1";
+        createConsumerIdList(2);
+        createMessageQueueList(5);
+        List<MessageQueue> result =
+                allocateMessageQueueAveragely.allocate("", currentCID, messageQueueList, consumerIdList);
+        printMessageQueue(result, "testConsumer2");
+        Assert.assertEquals(result.size(), 3);
+        Assert.assertEquals(result.containsAll(getMessageQueueList().subList(2, 5)), true);
+
+    }
+
+    @Test
+    public void testConsumer3CurrentCID0() {
+        currentCID = "0";
+        createConsumerIdList(3);
+        createMessageQueueList(5);
+        List<MessageQueue> result =
+                allocateMessageQueueAveragely.allocate("", currentCID, messageQueueList, consumerIdList);
+        printMessageQueue(result, "testConsumer3CurrentCID0");
+        Assert.assertEquals(result.size(), 1);
+        Assert.assertEquals(result.containsAll(getMessageQueueList().subList(0, 1)), true);
+    }
+
+    @Test
+    public void testConsumer3CurrentCID1() {
+        currentCID = "1";
+        createConsumerIdList(3);
+        createMessageQueueList(5);
+        List<MessageQueue> result =
+                allocateMessageQueueAveragely.allocate("", currentCID, messageQueueList, consumerIdList);
+        printMessageQueue(result, "testConsumer3CurrentCID1");
+        Assert.assertEquals(result.size(), 1);
+        Assert.assertEquals(result.containsAll(getMessageQueueList().subList(1, 2)), true);
+    }
+
+    @Test
+    public void testConsumer3CurrentCID2() {
+        currentCID = "2";
+        createConsumerIdList(3);
+        createMessageQueueList(5);
+        List<MessageQueue> result =
+                allocateMessageQueueAveragely.allocate("", currentCID, messageQueueList, consumerIdList);
+        printMessageQueue(result, "testConsumer3CurrentCID2");
+        Assert.assertEquals(result.size(), 3);
+        Assert.assertEquals(result.containsAll(getMessageQueueList().subList(2, 5)), true);
+    }
+
+    @Test
+    public void testConsumer4() {
+        currentCID = "1";
+        createConsumerIdList(4);
+        createMessageQueueList(5);
+        List<MessageQueue> result =
+                allocateMessageQueueAveragely.allocate("", currentCID, messageQueueList, consumerIdList);
+        printMessageQueue(result, "testConsumer4");
+        Assert.assertEquals(result.size(), 1);
+        Assert.assertEquals(result.containsAll(getMessageQueueList().subList(1, 2)), true);
+    }
+
+    @Test
+    public void testConsumer5() {
+        currentCID = "1";
+        createConsumerIdList(5);
+        createMessageQueueList(5);
+        List<MessageQueue> result =
+                allocateMessageQueueAveragely.allocate("", currentCID, messageQueueList, consumerIdList);
+        printMessageQueue(result, "testConsumer5");
+        Assert.assertEquals(result.size(), 1);
+        Assert.assertEquals(result.containsAll(getMessageQueueList().subList(1, 2)), true);
+    }
+
+    @Test
+    public void testConsumer6() {
+        currentCID = "1";
+        createConsumerIdList(2);
+        createMessageQueueList(6);
+        List<MessageQueue> result =
+                allocateMessageQueueAveragely.allocate("", currentCID, messageQueueList, consumerIdList);
+        printMessageQueue(result, "testConsumer");
+        Assert.assertEquals(result.size(), 3);
+        Assert.assertEquals(result.containsAll(getMessageQueueList().subList(3, 6)), true);
+    }
+
+    @Test
+    public void testCurrentCIDNotExists() {
+        currentCID = String.valueOf(Integer.MAX_VALUE);
+        createConsumerIdList(2);
+        createMessageQueueList(6);
+        List<MessageQueue> result =
+                allocateMessageQueueAveragely.allocate("", currentCID, messageQueueList, consumerIdList);
+        printMessageQueue(result, "testCurrentCIDNotExists");
+        Assert.assertEquals(result.size(), 0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCurrentCIDIllegalArgument() {
+        createConsumerIdList(2);
+        createMessageQueueList(6);
+        allocateMessageQueueAveragely.allocate("", "", getMessageQueueList(), getConsumerIdList());
+    }
+
+    public List<String> getConsumerIdList() {
+        return consumerIdList;
+    }
+
+    public void setConsumerIdList(List<String> consumerIdList) {
+        this.consumerIdList = consumerIdList;
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testMessageQueueIllegalArgument() {
+        currentCID = "0";
+        createConsumerIdList(2);
+        allocateMessageQueueAveragely.allocate("", currentCID, null, getConsumerIdList());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConsumerIdIllegalArgument() {
+        currentCID = "0";
+        createMessageQueueList(6);
+        allocateMessageQueueAveragely.allocate("", currentCID, getMessageQueueList(), null);
+    }
 
     @Test
     public void testAllocate() {

@@ -1,30 +1,46 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package com.alibaba.rocketmq.tools.command.message;
 
-import java.io.File;
-import java.nio.ByteBuffer;
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-
+import com.alibaba.rocketmq.common.MixAll;
 import com.alibaba.rocketmq.store.ConsumeQueue;
 import com.alibaba.rocketmq.store.MapedFile;
 import com.alibaba.rocketmq.store.MapedFileQueue;
 import com.alibaba.rocketmq.store.SelectMapedBufferResult;
 import com.alibaba.rocketmq.store.config.StorePathConfigHelper;
 
+import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+
 
 /**
  * @auther lansheng.zj
  */
 public class Store {
-
-    // 每个消息对应的MAGIC CODE daa320a7
     public final static int MessageMagicCode = 0xAABBCCDD ^ 1880681586 + 8;
-    // 文件末尾空洞对应的MAGIC CODE cbd43194
     private final static int BlankMagicCode = 0xBBCCDDEE ^ 1880681586 + 8;
-    // 存储消息的队列
+
     private MapedFileQueue mapedFileQueue;
-    // ConsumeQueue集合
+
     private ConcurrentHashMap<String/* topic */, ConcurrentHashMap<Integer/* queueId */, ConsumeQueue>> consumeQueueTable;
 
     private String cStorePath;
@@ -59,20 +75,20 @@ public class Store {
         File dirLogic = new File(StorePathConfigHelper.getStorePathConsumeQueue(lStorePath));
         File[] fileTopicList = dirLogic.listFiles();
         if (fileTopicList != null) {
-            // TOPIC 遍历
+
             for (File fileTopic : fileTopicList) {
                 String topic = fileTopic.getName();
-                // TOPIC 下队列遍历
+
                 File[] fileQueueIdList = fileTopic.listFiles();
                 if (fileQueueIdList != null) {
                     for (File fileQueueId : fileQueueIdList) {
                         int queueId = Integer.parseInt(fileQueueId.getName());
                         ConsumeQueue logic = new ConsumeQueue(//
-                            topic,//
-                            queueId,//
-                            StorePathConfigHelper.getStorePathConsumeQueue(lStorePath),//
-                            lSize,//
-                            null);
+                                topic,//
+                                queueId,//
+                                StorePathConfigHelper.getStorePathConsumeQueue(lStorePath),//
+                                lSize,//
+                                null);
                         this.putConsumeQueue(topic, queueId, logic);
                         if (!logic.load()) {
                             return false;
@@ -92,51 +108,17 @@ public class Store {
             map = new ConcurrentHashMap<Integer/* queueId */, ConsumeQueue>();
             map.put(queueId, consumeQueue);
             this.consumeQueueTable.put(topic, map);
-        }
-        else {
+        } else {
             map.put(queueId, consumeQueue);
         }
     }
-
-
-    public ConsumeQueue findConsumeQueue(String topic, int queueId) {
-        ConcurrentHashMap<Integer, ConsumeQueue> map = consumeQueueTable.get(topic);
-        if (null == map) {
-            ConcurrentHashMap<Integer, ConsumeQueue> newMap =
-                    new ConcurrentHashMap<Integer, ConsumeQueue>(128);
-            ConcurrentHashMap<Integer, ConsumeQueue> oldMap = consumeQueueTable.putIfAbsent(topic, newMap);
-            if (oldMap != null) {
-                map = oldMap;
-            }
-            else {
-                map = newMap;
-            }
-        }
-        ConsumeQueue logic = map.get(queueId);
-        if (null == logic) {
-            ConsumeQueue newLogic = new ConsumeQueue(//
-                topic,//
-                queueId,//
-                StorePathConfigHelper.getStorePathConsumeQueue(lStorePath),//
-                lSize,//
-                null);
-            ConsumeQueue oldLogic = map.putIfAbsent(queueId, newLogic);
-            if (oldLogic != null) {
-                logic = oldLogic;
-            }
-            else {
-                logic = newLogic;
-            }
-        }
-        return logic;
-    }
-
 
     public void traval(boolean openAll) {
         boolean success = true;
         byte[] bytesContent = new byte[1024];
         List<MapedFile> mapedFiles = this.mapedFileQueue.getMapedFiles();
-        ALL: for (MapedFile mapedFile : mapedFiles) {
+        ALL:
+        for (MapedFile mapedFile : mapedFiles) {
             long startOffset = mapedFile.getFileFromOffset();
             int position = 0;
             int msgCount = 0;
@@ -201,11 +183,17 @@ public class Store {
                 // 16 TOPIC
                 byte topicLen = byteBuffer.get();
                 byteBuffer.get(bytesContent, 0, topicLen);
-                String topic = new String(bytesContent, 0, topicLen);
+                String topic = null;
+                try {
+                    topic = new String(bytesContent, 0, topicLen, MixAll.DEFAULT_CHARSET);
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+
 
                 Date storeTime = new Date(storeTimestamp);
 
-                // 计算出来当前消息的偏移量
+
                 long currentPhyOffset = startOffset + position;
                 if (physicOffset != currentPhyOffset) {
                     System.out.println(storeTime
@@ -244,8 +232,7 @@ public class Store {
                             break ALL;
                         }
                     }
-                }
-                finally {
+                } finally {
                     smb.release();
                 }
 
@@ -259,5 +246,35 @@ public class Store {
         }
 
         System.out.println("travel " + (success ? "ok" : "fail"));
+    }
+
+    public ConsumeQueue findConsumeQueue(String topic, int queueId) {
+        ConcurrentHashMap<Integer, ConsumeQueue> map = consumeQueueTable.get(topic);
+        if (null == map) {
+            ConcurrentHashMap<Integer, ConsumeQueue> newMap =
+                    new ConcurrentHashMap<Integer, ConsumeQueue>(128);
+            ConcurrentHashMap<Integer, ConsumeQueue> oldMap = consumeQueueTable.putIfAbsent(topic, newMap);
+            if (oldMap != null) {
+                map = oldMap;
+            } else {
+                map = newMap;
+            }
+        }
+        ConsumeQueue logic = map.get(queueId);
+        if (null == logic) {
+            ConsumeQueue newLogic = new ConsumeQueue(//
+                    topic,//
+                    queueId,//
+                    StorePathConfigHelper.getStorePathConsumeQueue(lStorePath),//
+                    lSize,//
+                    null);
+            ConsumeQueue oldLogic = map.putIfAbsent(queueId, newLogic);
+            if (oldLogic != null) {
+                logic = oldLogic;
+            } else {
+                logic = newLogic;
+            }
+        }
+        return logic;
     }
 }

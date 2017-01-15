@@ -1,14 +1,27 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package com.alibaba.rocketmq.tools.admin.api;
 
 public enum TrackType {
-    // 订阅了，而且消费了（Offset越过了）
-    SUBSCRIBED_AND_CONSUMED,
-    // 订阅了，但是被过滤掉了
-    SUBSCRIBED_BUT_FILTERD,
-    // 订阅了，但是是PULL，结果未知
-    SUBSCRIBED_BUT_PULL,
-    // 订阅了，但是没有消费（Offset小）
-    SUBSCRIBED_AND_NOT_CONSUME_YET,
-    // 未知异常
-    UNKNOW_EXCEPTION,
+    CONSUMED,
+    CONSUMED_BUT_FILTERED,
+    PULL,
+    NOT_CONSUME_YET,
+    NOT_ONLINE,
+    UNKNOWN
 }

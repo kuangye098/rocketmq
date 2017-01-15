@@ -1,4 +1,24 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package com.alibaba.rocketmq.common.stats;
+
+import com.alibaba.rocketmq.common.UtilAll;
+import org.slf4j.Logger;
 
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -6,15 +26,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import org.slf4j.Logger;
-
-import com.alibaba.rocketmq.common.UtilAll;
-
 
 public class MomentStatsItemSet {
     private final ConcurrentHashMap<String/* key */, MomentStatsItem> statsItemTable =
             new ConcurrentHashMap<String, MomentStatsItem>(128);
-
     private final String statsName;
     private final ScheduledExecutorService scheduledExecutorService;
     private final Logger log;
@@ -27,45 +42,27 @@ public class MomentStatsItemSet {
         this.init();
     }
 
-
-    public MomentStatsItem getAndCreateStatsItem(final String statsKey) {
-        MomentStatsItem statsItem = this.statsItemTable.get(statsKey);
-        if (null == statsItem) {
-            statsItem =
-                    new MomentStatsItem(this.statsName, statsKey, this.scheduledExecutorService, this.log);
-            MomentStatsItem prev = this.statsItemTable.put(statsKey, statsItem);
-            // 说明是第一次插入
-            if (null == prev) {
-                // 内部不需要定时，外部统一定时
-                // statsItem.init();
-            }
-        }
-
-        return statsItem;
+    public ConcurrentHashMap<String, MomentStatsItem> getStatsItemTable() {
+        return statsItemTable;
     }
 
-
-    public void setValue(final String statsKey, final int value) {
-        MomentStatsItem statsItem = this.getAndCreateStatsItem(statsKey);
-        statsItem.getValue().set(value);
+    public String getStatsName() {
+        return statsName;
     }
-
 
     public void init() {
-        // 分钟整点执行
-        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    printAtMinutes();
-                }
-                catch (Throwable e) {
-                }
-            }
-        }, Math.abs(UtilAll.computNextMinutesTimeMillis() - System.currentTimeMillis()), //
-            1000 * 60 * 5, TimeUnit.MILLISECONDS);
-    }
 
+        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+                                                              @Override
+                                                              public void run() {
+                                                                  try {
+                                                                      printAtMinutes();
+                                                                  } catch (Throwable e) {
+                                                                  }
+                                                              }
+                                                          }, Math.abs(UtilAll.computNextMinutesTimeMillis() - System.currentTimeMillis()), //
+                1000 * 60 * 5, TimeUnit.MILLISECONDS);
+    }
 
     private void printAtMinutes() {
         Iterator<Entry<String, MomentStatsItem>> it = this.statsItemTable.entrySet().iterator();
@@ -73,5 +70,26 @@ public class MomentStatsItemSet {
             Entry<String, MomentStatsItem> next = it.next();
             next.getValue().printAtMinutes();
         }
+    }
+
+    public void setValue(final String statsKey, final int value) {
+        MomentStatsItem statsItem = this.getAndCreateStatsItem(statsKey);
+        statsItem.getValue().set(value);
+    }
+
+    public MomentStatsItem getAndCreateStatsItem(final String statsKey) {
+        MomentStatsItem statsItem = this.statsItemTable.get(statsKey);
+        if (null == statsItem) {
+            statsItem =
+                    new MomentStatsItem(this.statsName, statsKey, this.scheduledExecutorService, this.log);
+            MomentStatsItem prev = this.statsItemTable.put(statsKey, statsItem);
+
+            if (null == prev) {
+
+                // statsItem.init();
+            }
+        }
+
+        return statsItem;
     }
 }

@@ -1,17 +1,18 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.store.transaction;
 
@@ -39,37 +40,30 @@ import com.alibaba.rocketmq.store.config.BrokerRole;
 
 
 /**
- * 事务服务，存储每条事务的状态（Prepared，Commited，Rollbacked）<br>
- * 名词解释：<br>
  * clOffset - Commit Log Offset<br>
  * tsOffset - Transaction State Table Offset
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2013-7-21
  */
 public class TransactionStateService {
-    // 存储单元大小
     public static final int TSStoreUnitSize = 24;
-    // 用来恢复事务状态表的redolog
+
     public static final String TRANSACTION_REDOLOG_TOPIC = "TRANSACTION_REDOLOG_TOPIC_XXXX";
     public static final int TRANSACTION_REDOLOG_TOPIC_QUEUEID = 0;
     public final static long PreparedMessageTagsCode = -1;
     private static final Logger log = LoggerFactory.getLogger(LoggerName.StoreLoggerName);
-    // 更改事务状态，具体更改位置
+
     private final static int TS_STATE_POS = 20;
     private static final Logger tranlog = LoggerFactory.getLogger(LoggerName.TransactionLoggerName);
-    // 存储顶层对象
+
     private final DefaultMessageStore defaultMessageStore;
-    // 重复利用内存Buffer
+
     private final ByteBuffer byteBufferAppend = ByteBuffer.allocate(TSStoreUnitSize);
-    // 事务状态的Redolog，当进程意外宕掉，可通过redolog恢复所有事务的状态
-    // Redolog的实现利用了消费队列，主要为了恢复方便
+
     private final ConsumeQueue tranRedoLog;
-    // State Table Offset，重启时，必须纠正
+
     private final AtomicLong tranStateTableOffset = new AtomicLong(0);
-    // 定时回查线程
+
     private final Timer timer = new Timer("CheckTransactionMessageTimer", true);
-    // 存储事务状态的表格
+
     private MapedFileQueue tranStateTable;
 
 
@@ -123,22 +117,16 @@ public class TransactionStateService {
 
             @Override
             public void run() {
-                // Slave不需要回查事务状态
                 if (slave)
                     return;
 
-                // Check功能是否开启
                 if (!TransactionStateService.this.defaultMessageStore.getMessageStoreConfig()
                     .isCheckTransactionMessageEnable()) {
                     return;
                 }
 
                 try {
-                	/**
-                	 * chen.si:这里会延迟执行，消息会先写进去，导致file的write position
-                	 * 
-                	 * 这里做个同步是不是好点，加载完消息，再触发这里
-                	 */
+
                     SelectMapedBufferResult selectMapedBufferResult = mapedFile.selectMapedBuffer(0);
                     if (selectMapedBufferResult != null) {
                         long preparedMessageCountInThisMapedFile = 0;
@@ -159,15 +147,10 @@ public class TransactionStateService {
                                 // Transaction State
                                 int tranType = selectMapedBufferResult.getByteBuffer().getInt();
 
-                                /**
-                                 * chen.si:这里只需要处理超时的prepared消息，用于回查事务状态
-                                 */
-                                // 已经提交或者回滚的消息跳过
                                 if (tranType != MessageSysFlag.TransactionPreparedType) {
                                     continue;
                                 }
 
-                                // 遇到时间不符合，终止
                                 long timestampLong = timestamp * 1000;
                                 long diff = System.currentTimeMillis() - timestampLong;
                                 if (diff < checkTransactionMessageAtleastInterval) {
@@ -188,7 +171,6 @@ public class TransactionStateService {
                                 }
                             }
 
-                            // 无Prepared消息，且遍历完，则终止定时任务
                             if (0 == preparedMessageCountInThisMapedFile //
                                     && i == mapedFile.getFileSize()) {
                                 tranlog
@@ -251,15 +233,8 @@ public class TransactionStateService {
             this.recoverStateTableNormal();
         }
         else {
-            // 第一步，删除State Table
-        	/**
-        	 * chen.si：这里删除了所有的tran table
-        	 */
             this.tranStateTable.destroy();
-            // 第二步，通过RedoLog全量恢复StateTable
-            /**
-             * chen.si：重新生成tran table
-             */
+
             this.recreateStateTable();
         }
     }
@@ -272,7 +247,6 @@ public class TransactionStateService {
 
         final TreeSet<Long> preparedItemSet = new TreeSet<Long>();
 
-        // 第一步，重头扫描RedoLog
         final long minOffset = this.tranRedoLog.getMinOffsetInQuque();
         long processOffset = minOffset;
         while (true) {
@@ -284,37 +258,13 @@ public class TransactionStateService {
                         long offsetMsg = bufferConsumeQueue.getByteBuffer().getLong();
                         int sizeMsg = bufferConsumeQueue.getByteBuffer().getInt();
                         long tagsCode = bufferConsumeQueue.getByteBuffer().getLong();
-                        /**
-                         * chen.si:redo 消息示例：
-                         *  
-                            prepared:
-                            1 commitLogOffset:3780
-							2 messageSize:195
-							3 tagsCode:-1
-							
-							prepared:
-							1 commitLogOffset:3975
-							2 messageSize:195
-							3 tagsCode:-1
-							
-							commit/rollback:
-							1 commitLogOffset:4170
-							2 messageSize:195
-							3 tagsCode:3975
-                         */
 
                         // Prepared
-                        /**
-                         * chen.si：根据tag code来区分redo消息类型
-                         */
                         if (TransactionStateService.PreparedMessageTagsCode == tagsCode) {
                             preparedItemSet.add(offsetMsg);
                         }
                         // Commit/Rollback
                         else {
-                        	/**
-                        	 * chen.si: commit和rollback的消息，不需要继续处理，同时 要将对应的prepared消息移除掉
-                        	 */
                             preparedItemSet.remove(tagsCode);
                         }
                     }
@@ -322,7 +272,6 @@ public class TransactionStateService {
                     processOffset += i;
                 }
                 finally {
-                    // 必须释放资源
                     bufferConsumeQueue.release();
                 }
             }
@@ -333,18 +282,14 @@ public class TransactionStateService {
 
         log.info("scan transaction redolog over, End offset: {},  Prepared Transaction Count: {}",
             processOffset, preparedItemSet.size());
-        // 第二步，重建StateTable
+
         Iterator<Long> it = preparedItemSet.iterator();
         while (it.hasNext()) {
             Long offset = it.next();
-            /**
-             * chen.si：根据redo消息，在commit log中找到对应的prepared消息
-             */
+
             MessageExt msgExt = this.defaultMessageStore.lookMessageByOffset(offset);
             if (msgExt != null) {
-            	/**
-            	 * chen.si:重建tran stat消息
-            	 */
+
                 this.appendPreparedTransaction(msgExt.getCommitLogOffset(), msgExt.getStoreSize(),
                     (int) (msgExt.getStoreTimestamp() / 1000),
                     msgExt.getProperty(MessageConst.PROPERTY_PRODUCER_GROUP).hashCode());
@@ -353,10 +298,6 @@ public class TransactionStateService {
         }
     }
 
-
-    /**
-     * 单线程调用
-     */
     public boolean appendPreparedTransaction(//
             final long clOffset,//
             final int size,//
@@ -369,17 +310,10 @@ public class TransactionStateService {
             return false;
         }
 
-        /**
-         * chen.si:用来处理prepared tran消息，主要进行回查事务状态
-         */
-        // 首次创建，加入定时任务中
         if (0 == mapedFile.getWrotePostion()) {
             this.addTimerTask(mapedFile);
         }
 
-        /**
-         * chen.si：将redo中的prepared消息，重新写入tran stat文件
-         */
         this.byteBufferAppend.position(0);
         this.byteBufferAppend.limit(TSStoreUnitSize);
 
@@ -399,23 +333,9 @@ public class TransactionStateService {
 
 
     private void recoverStateTableNormal() {
-    	/**
-    	 * chen.si：这个方法的主要任务如下：
-    	 * 
-    	 * 1. 设置 tran log queue中的最后一个消息位置 ？ 这个版本为什么不设置？
-    	 * 
-    	 * 2. 设置最后一个消息所在 log文件的commit 和 write position
-    	 * 
-    	 * 3. 设置tran stat的事务消息的下一个序号
-    	 * 
-    	 * 3. 删除多余的文件
-    	 */
+
         final List<MapedFile> mapedFiles = this.tranStateTable.getMapedFiles();
         if (!mapedFiles.isEmpty()) {
-        	/**
-        	 * chen.si:老路子了，依旧从最后的3个文件中找出 最后一个在用文件
-        	 */
-            // 从倒数第三个文件开始恢复
             int index = mapedFiles.size() - 3;
             if (index < 0)
                 index = 0;
@@ -424,17 +344,14 @@ public class TransactionStateService {
             MapedFile mapedFile = mapedFiles.get(index);
             ByteBuffer byteBuffer = mapedFile.sliceByteBuffer();
             /*
-             * chen.si：queue offset(global offset)
+             * queue offset(global offset)
              */
             long processOffset = mapedFile.getFileFromOffset();
             /*
-             * chen.si：file offset(local offset)
+             * file offset(local offset)
              */
             long mapedFileOffset = 0;
             while (true) {
-            	/**
-            	 * chen.si：每个事务消息24个字节
-            	 */
                 for (int i = 0; i < mapedFileSizeLogics; i += TSStoreUnitSize) {
 
                     final long clOffset_read = byteBuffer.getLong();
@@ -442,29 +359,9 @@ public class TransactionStateService {
                     final int timestamp_read = byteBuffer.getInt();
                     final int groupHashCode_read = byteBuffer.getInt();
                     /**
-                     * chen.si：事务状态：prepared/commit/rollback
+                     * prepared/commit/rollback
                      */
                     final int state_read = byteBuffer.getInt();
-                    
-                    /**
-                     * chen.si: 事务消息的示例
-                     * 
-                     *  其中<>内的内容为时间转换后的
-                     * 
-                     * prepared：
-                        1 commitLogOffset:3780
-						2 messageSize:195
-						3 timestamp:1404354477 <1970-01-17 14:05:54>
-						4 groupHCode:1119945399
-						5 tranType:4
-					   
-					   commit：
-						1 commitLogOffset:3975
-						2 messageSize:195
-						3 timestamp:1404355385 <1970-01-17 14:05:55>
-						4 groupHCode:1119945399
-						5 tranType:8
-                     */
 
                     boolean stateOK = false;
                     switch (state_read) {
@@ -477,12 +374,7 @@ public class TransactionStateService {
                         break;
                     }
 
-                    // 说明当前存储单元有效
-                    // TODO 这样判断有效是否合理？
                     if (clOffset_read >= 0 && size_read > 0 && stateOK) {
-                    	/**
-                    	 * chen.si：消息合法，增加 file offset
-                    	 */
                         mapedFileOffset = i + TSStoreUnitSize;
                     }
                     else {
@@ -493,24 +385,17 @@ public class TransactionStateService {
                     }
                 }
 
-                // 走到文件末尾，切换至下一个文件
                 if (mapedFileOffset == mapedFileSizeLogics) {
                     index++;
                     if (index >= mapedFiles.size()) {
-                        // 当前条件分支不可能发生
                         log.info("recover last transaction state table file over, last maped file "
                                 + mapedFile.getFileName());
                         break;
                     }
                     else {
-                    	/**
-                    	 * chen.si：继续解析下一个文件
-                    	 */
                         mapedFile = mapedFiles.get(index);
                         byteBuffer = mapedFile.sliceByteBuffer();
-                        /**
-                         * chen.si：queue offset直接更新为 file的名字对应的offset
-                         */
+
                         processOffset = mapedFile.getFileFromOffset();
                         mapedFileOffset = 0;
                         log.info("recover next transaction state table file, " + mapedFile.getFileName());
@@ -524,25 +409,15 @@ public class TransactionStateService {
             }
 
             processOffset += mapedFileOffset;
-            /**
-             * chen.si：
-             * 1. 设置 代写文件 的commit 和 write position
-             * 2. 删除多余的文件
-             */
+
             this.tranStateTable.truncateDirtyFiles(processOffset);
-            /**
-             * chen.si:这个很重要，基于事务消息个数，来设置 事务的ID
-             */
+
             this.tranStateTableOffset.set(this.tranStateTable.getMaxOffset() / TSStoreUnitSize);
             log.info("recover normal over, transaction state table max offset: {}",
                 this.tranStateTableOffset.get());
         }
     }
 
-
-    /**
-     * 单线程调用
-     */
     public boolean updateTransactionState(//
             final long tsOffset,//
             final long clOffset,//
@@ -558,27 +433,23 @@ public class TransactionStateService {
                 final int groupHashCode_read = selectMapedBufferResult.getByteBuffer().getInt();
                 final int state_read = selectMapedBufferResult.getByteBuffer().getInt();
 
-                // 校验数据正确性
                 if (clOffset != clOffset_read) {
                     log.error("updateTransactionState error clOffset: {} clOffset_read: {}", clOffset,
                         clOffset_read);
                     return false;
                 }
 
-                // 校验数据正确性
                 if (groupHashCode != groupHashCode_read) {
                     log.error("updateTransactionState error groupHashCode: {} groupHashCode_read: {}",
                         groupHashCode, groupHashCode_read);
                     return false;
                 }
 
-                // 判断是否已经更新过
                 if (MessageSysFlag.TransactionPreparedType != state_read) {
                     log.warn("updateTransactionState error, the transaction is updated before.");
                     return true;
                 }
 
-                // 更新事务状态
                 selectMapedBufferResult.getByteBuffer().putInt(TS_STATE_POS, state);
             }
             catch (Exception e) {

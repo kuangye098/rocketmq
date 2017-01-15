@@ -1,27 +1,20 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.tools.command.consumer;
-
-import java.util.Iterator;
-import java.util.Map.Entry;
-import java.util.TreeMap;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
 
 import com.alibaba.rocketmq.common.MQVersion;
 import com.alibaba.rocketmq.common.MixAll;
@@ -32,27 +25,36 @@ import com.alibaba.rocketmq.remoting.RPCHook;
 import com.alibaba.rocketmq.tools.admin.DefaultMQAdminExt;
 import com.alibaba.rocketmq.tools.command.MQAdminStartup;
 import com.alibaba.rocketmq.tools.command.SubCommand;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 
 
 /**
- * 查询Consumer内部数据结构
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2014-07-20
+ * @author shijia.wxr
  */
 public class ConsumerStatusSubCommand implements SubCommand {
+
+    public static void main(String[] args) {
+        System.setProperty(MixAll.NAMESRV_ADDR_PROPERTY, "127.0.0.1:9876");
+        MQAdminStartup.main(new String[]{new ConsumerStatusSubCommand().commandName(), //
+                "-g", "benchmark_consumer" //
+        });
+    }
 
     @Override
     public String commandName() {
         return "consumerStatus";
     }
 
-
     @Override
     public String commandDesc() {
         return "Query consumer's internal data structure";
     }
-
 
     @Override
     public Options buildCommandlineOptions(Options options) {
@@ -71,7 +73,6 @@ public class ConsumerStatusSubCommand implements SubCommand {
         return options;
     }
 
-
     @Override
     public void execute(CommandLine commandLine, Options options, RPCHook rpcHook) {
         DefaultMQAdminExt defaultMQAdminExt = new DefaultMQAdminExt(rpcHook);
@@ -88,7 +89,7 @@ public class ConsumerStatusSubCommand implements SubCommand {
             boolean jstack = commandLine.hasOption('s');
 
             if (!commandLine.hasOption('i')) {
-                // 打印连接
+
                 int i = 1;
                 long now = System.currentTimeMillis();
                 final TreeMap<String/* clientId */, ConsumerRunningInfo> criTable =
@@ -101,14 +102,13 @@ public class ConsumerStatusSubCommand implements SubCommand {
                             criTable.put(conn.getClientId(), consumerRunningInfo);
                             String filePath = now + "/" + conn.getClientId();
                             MixAll.string2FileNotSafe(consumerRunningInfo.formatString(), filePath);
-                            System.out.printf("%03d  %-40s %-20s %s\n",//
-                                i++,//
-                                conn.getClientId(),//
-                                MQVersion.getVersionDesc(conn.getVersion()),//
-                                filePath);
+                            System.out.printf("%03d  %-40s %-20s %s%n",//
+                                    i++,//
+                                    conn.getClientId(),//
+                                    MQVersion.getVersionDesc(conn.getVersion()),//
+                                    filePath);
                         }
-                    }
-                    catch (Exception e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
@@ -119,9 +119,9 @@ public class ConsumerStatusSubCommand implements SubCommand {
                     boolean rebalanceOK = subSame && ConsumerRunningInfo.analyzeRebalance(criTable);
 
                     if (subSame) {
-                        System.out.println("\n\nSame subscription in the same group of consumer");
+                        System.out.println("%n%nSame subscription in the same group of consumer");
 
-                        System.out.printf("\n\nRebalance %s\n", rebalanceOK ? "OK" : "Failed");
+                        System.out.printf("%n%nRebalance %s%n", rebalanceOK ? "OK" : "Failed");
 
                         Iterator<Entry<String, ConsumerRunningInfo>> it = criTable.entrySet().iterator();
                         while (it.hasNext()) {
@@ -132,14 +132,12 @@ public class ConsumerStatusSubCommand implements SubCommand {
                                 System.out.println(result);
                             }
                         }
-                    }
-                    else {
+                    } else {
                         System.out
-                            .println("\n\nWARN: Different subscription in the same group of consumer!!!");
+                                .println("\n\nWARN: Different subscription in the same group of consumer!!!");
                     }
                 }
-            }
-            else {
+            } else {
                 String clientId = commandLine.getOptionValue('i').trim();
                 ConsumerRunningInfo consumerRunningInfo =
                         defaultMQAdminExt.getConsumerRunningInfo(group, clientId, jstack);
@@ -147,20 +145,10 @@ public class ConsumerStatusSubCommand implements SubCommand {
                     System.out.println(consumerRunningInfo.formatString());
                 }
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             defaultMQAdminExt.shutdown();
         }
-    }
-
-
-    public static void main(String[] args) {
-        System.setProperty(MixAll.NAMESRV_ADDR_PROPERTY, "127.0.0.1:9876");
-        MQAdminStartup.main(new String[] { new ConsumerStatusSubCommand().commandName(), //
-                                          "-g", "benchmark_consumer" //
-        });
     }
 }

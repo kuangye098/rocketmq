@@ -1,19 +1,34 @@
 /**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+/**
  * $Id: TopicRouteData.java 1835 2013-05-16 02:00:50Z shijia.wxr $
  */
 package com.alibaba.rocketmq.common.protocol.route;
+
+import com.alibaba.rocketmq.remoting.protocol.RemotingSerializable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import com.alibaba.rocketmq.remoting.protocol.RemotingSerializable;
-
 
 /**
- * Topic路由数据，从Name Server获取
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
+ * @author shijia.wxr
  */
 public class TopicRouteData extends RemotingSerializable {
     private String orderTopicConf;
@@ -64,16 +79,21 @@ public class TopicRouteData extends RemotingSerializable {
         this.brokerDatas = brokerDatas;
     }
 
+    public HashMap<String, List<String>> getFilterServerTable() {
+        return filterServerTable;
+    }
+
+    public void setFilterServerTable(HashMap<String, List<String>> filterServerTable) {
+        this.filterServerTable = filterServerTable;
+    }
 
     public String getOrderTopicConf() {
         return orderTopicConf;
     }
 
-
     public void setOrderTopicConf(String orderTopicConf) {
         this.orderTopicConf = orderTopicConf;
     }
-
 
     @Override
     public int hashCode() {
@@ -85,7 +105,6 @@ public class TopicRouteData extends RemotingSerializable {
         result = prime * result + ((filterServerTable == null) ? 0 : filterServerTable.hashCode());
         return result;
     }
-
 
     @Override
     public boolean equals(Object obj) {
@@ -99,40 +118,25 @@ public class TopicRouteData extends RemotingSerializable {
         if (brokerDatas == null) {
             if (other.brokerDatas != null)
                 return false;
-        }
-        else if (!brokerDatas.equals(other.brokerDatas))
+        } else if (!brokerDatas.equals(other.brokerDatas))
             return false;
         if (orderTopicConf == null) {
             if (other.orderTopicConf != null)
                 return false;
-        }
-        else if (!orderTopicConf.equals(other.orderTopicConf))
+        } else if (!orderTopicConf.equals(other.orderTopicConf))
             return false;
         if (queueDatas == null) {
             if (other.queueDatas != null)
                 return false;
-        }
-        else if (!queueDatas.equals(other.queueDatas))
+        } else if (!queueDatas.equals(other.queueDatas))
             return false;
         if (filterServerTable == null) {
             if (other.filterServerTable != null)
                 return false;
-        }
-        else if (!filterServerTable.equals(other.filterServerTable))
+        } else if (!filterServerTable.equals(other.filterServerTable))
             return false;
         return true;
     }
-
-
-    public HashMap<String, List<String>> getFilterServerTable() {
-        return filterServerTable;
-    }
-
-
-    public void setFilterServerTable(HashMap<String, List<String>> filterServerTable) {
-        this.filterServerTable = filterServerTable;
-    }
-
 
     @Override
     public String toString() {

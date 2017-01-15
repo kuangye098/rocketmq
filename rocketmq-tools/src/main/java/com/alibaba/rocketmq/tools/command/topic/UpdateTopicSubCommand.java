@@ -1,25 +1,20 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.tools.command.topic;
-
-import java.util.Set;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
 
 import com.alibaba.rocketmq.common.TopicConfig;
 import com.alibaba.rocketmq.common.sysflag.TopicSysFlag;
@@ -28,13 +23,17 @@ import com.alibaba.rocketmq.srvutil.ServerUtil;
 import com.alibaba.rocketmq.tools.admin.DefaultMQAdminExt;
 import com.alibaba.rocketmq.tools.command.CommandUtil;
 import com.alibaba.rocketmq.tools.command.SubCommand;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+
+import java.util.Set;
 
 
 /**
- * 修改、创建Topic配置命令
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2013-7-21
+ *
+ * @author shijia.wxr
+ *
  */
 public class UpdateTopicSubCommand implements SubCommand {
 
@@ -72,7 +71,7 @@ public class UpdateTopicSubCommand implements SubCommand {
         opt.setRequired(false);
         options.addOption(opt);
 
-        opt = new Option("p", "perm", true, "set topic's permission(2|4|6), intro[2:R; 4:W; 6:RW]");
+        opt = new Option("p", "perm", true, "set topic's permission(2|4|6), intro[2:W 4:R; 6:RW]");
         opt.setRequired(false);
         options.addOption(opt);
 
@@ -144,19 +143,17 @@ public class UpdateTopicSubCommand implements SubCommand {
                 defaultMQAdminExt.createAndUpdateTopicConfig(addr, topicConfig);
 
                 if (isOrder) {
-                    // 注册顺序消息到 nameserver
                     String brokerName = CommandUtil.fetchBrokerNameByAddr(defaultMQAdminExt, addr);
                     String orderConf = brokerName + ":" + topicConfig.getWriteQueueNums();
                     defaultMQAdminExt.createOrUpdateOrderConf(topicConfig.getTopicName(), orderConf, false);
                     System.out.println(String.format("set broker orderConf. isOrder=%s, orderConf=[%s]",
-                        isOrder, orderConf.toString()));
+                            isOrder, orderConf.toString()));
                 }
-                System.out.printf("create topic to %s success.\n", addr);
+                System.out.printf("create topic to %s success.%n", addr);
                 System.out.println(topicConfig);
                 return;
 
-            }
-            else if (commandLine.hasOption('c')) {
+            } else if (commandLine.hasOption('c')) {
                 String clusterName = commandLine.getOptionValue('c').trim();
 
                 defaultMQAdminExt.start();
@@ -165,24 +162,23 @@ public class UpdateTopicSubCommand implements SubCommand {
                         CommandUtil.fetchMasterAddrByClusterName(defaultMQAdminExt, clusterName);
                 for (String addr : masterSet) {
                     defaultMQAdminExt.createAndUpdateTopicConfig(addr, topicConfig);
-                    System.out.printf("create topic to %s success.\n", addr);
+                    System.out.printf("create topic to %s success.%n", addr);
                 }
 
                 if (isOrder) {
-                    // 注册顺序消息到 nameserver
                     Set<String> brokerNameSet =
                             CommandUtil.fetchBrokerNameByClusterName(defaultMQAdminExt, clusterName);
                     StringBuilder orderConf = new StringBuilder();
                     String splitor = "";
                     for (String s : brokerNameSet) {
                         orderConf.append(splitor).append(s).append(":")
-                            .append(topicConfig.getWriteQueueNums());
+                                .append(topicConfig.getWriteQueueNums());
                         splitor = ";";
                     }
                     defaultMQAdminExt.createOrUpdateOrderConf(topicConfig.getTopicName(),
-                        orderConf.toString(), true);
+                            orderConf.toString(), true);
                     System.out.println(String.format("set cluster orderConf. isOrder=%s, orderConf=[%s]",
-                        isOrder, orderConf.toString()));
+                            isOrder, orderConf.toString()));
                 }
 
                 System.out.println(topicConfig);
@@ -190,11 +186,9 @@ public class UpdateTopicSubCommand implements SubCommand {
             }
 
             ServerUtil.printCommandLineHelp("mqadmin " + this.commandName(), options);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             defaultMQAdminExt.shutdown();
         }
     }
