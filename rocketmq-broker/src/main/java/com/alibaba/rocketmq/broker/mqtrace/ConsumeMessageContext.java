@@ -1,19 +1,22 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.broker.mqtrace;
+
+import com.alibaba.rocketmq.store.stats.BrokerStatsManager;
 
 import java.util.Map;
 
@@ -29,6 +32,11 @@ public class ConsumeMessageContext {
     private boolean success;
     private String status;
     private Object mqTraceContext;
+
+    private String commercialOwner;
+    private BrokerStatsManager.StatsType commercialRcvStats;
+    private int commercialRcvTimes;
+    private int commercialRcvSize;
 
 
     public String getConsumerGroup() {
@@ -128,5 +136,37 @@ public class ConsumeMessageContext {
 
     public void setBodyLength(int bodyLength) {
         this.bodyLength = bodyLength;
+    }
+
+    public String getCommercialOwner() {
+        return commercialOwner;
+    }
+
+    public void setCommercialOwner(final String commercialOwner) {
+        this.commercialOwner = commercialOwner;
+    }
+
+    public BrokerStatsManager.StatsType getCommercialRcvStats() {
+        return commercialRcvStats;
+    }
+
+    public void setCommercialRcvStats(final BrokerStatsManager.StatsType commercialRcvStats) {
+        this.commercialRcvStats = commercialRcvStats;
+    }
+
+    public int getCommercialRcvTimes() {
+        return commercialRcvTimes;
+    }
+
+    public void setCommercialRcvTimes(final int commercialRcvTimes) {
+        this.commercialRcvTimes = commercialRcvTimes;
+    }
+
+    public int getCommercialRcvSize() {
+        return commercialRcvSize;
+    }
+
+    public void setCommercialRcvSize(final int commercialRcvSize) {
+        this.commercialRcvSize = commercialRcvSize;
     }
 }

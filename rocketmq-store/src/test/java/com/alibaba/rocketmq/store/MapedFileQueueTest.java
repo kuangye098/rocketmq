@@ -1,17 +1,28 @@
 /**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+/**
  * $Id: MapedFileQueueTest.java 1831 2013-05-16 01:39:51Z shijia.wxr $
  */
 package com.alibaba.rocketmq.store;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.junit.*;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.Assert.*;
 
 
 public class MapedFileQueueTest {
@@ -43,7 +54,7 @@ public class MapedFileQueueTest {
     public void test_getLastMapedFile() {
         final String fixedMsg = "0123456789abcdef";
         System.out.println("================================================================");
-        AllocateMapedFileService allocateMapedFileService = new AllocateMapedFileService();
+        AllocateMapedFileService allocateMapedFileService = new AllocateMapedFileService(null);
         allocateMapedFileService.start();
         MapedFileQueue mapedFileQueue =
                 new MapedFileQueue("./unit_test_store/a/", 1024, allocateMapedFileService);
@@ -69,7 +80,7 @@ public class MapedFileQueueTest {
     public void test_findMapedFileByOffset() {
         final String fixedMsg = "abcd";
         System.out.println("================================================================");
-        AllocateMapedFileService allocateMapedFileService = new AllocateMapedFileService();
+        AllocateMapedFileService allocateMapedFileService = new AllocateMapedFileService(null);
         allocateMapedFileService.start();
         MapedFileQueue mapedFileQueue =
                 new MapedFileQueue("./unit_test_store/b/", 1024, allocateMapedFileService);
@@ -129,7 +140,7 @@ public class MapedFileQueueTest {
     public void test_commit() {
         final String fixedMsg = "0123456789abcdef";
         System.out.println("================================================================");
-        AllocateMapedFileService allocateMapedFileService = new AllocateMapedFileService();
+        AllocateMapedFileService allocateMapedFileService = new AllocateMapedFileService(null);
         allocateMapedFileService.start();
         MapedFileQueue mapedFileQueue =
                 new MapedFileQueue("./unit_test_store/c/", 1024, allocateMapedFileService);
@@ -141,7 +152,7 @@ public class MapedFileQueueTest {
             assertTrue(result);
         }
 
-        // 不断尝试提交
+
         boolean result = mapedFileQueue.commit(0);
         assertFalse(result);
         assertEquals(1024 * 1, mapedFileQueue.getCommittedWhere());
@@ -183,7 +194,7 @@ public class MapedFileQueueTest {
     public void test_getMapedMemorySize() {
         final String fixedMsg = "abcd";
         System.out.println("================================================================");
-        AllocateMapedFileService allocateMapedFileService = new AllocateMapedFileService();
+        AllocateMapedFileService allocateMapedFileService = new AllocateMapedFileService(null);
         allocateMapedFileService.start();
         MapedFileQueue mapedFileQueue =
                 new MapedFileQueue("./unit_test_store/d/", 1024, allocateMapedFileService);

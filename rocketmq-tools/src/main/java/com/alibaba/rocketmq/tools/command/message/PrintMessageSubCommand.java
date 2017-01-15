@@ -1,27 +1,20 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.tools.command.message;
-
-import java.io.UnsupportedEncodingException;
-import java.util.List;
-import java.util.Set;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
 
 import com.alibaba.rocketmq.client.consumer.DefaultMQPullConsumer;
 import com.alibaba.rocketmq.client.consumer.PullResult;
@@ -31,13 +24,20 @@ import com.alibaba.rocketmq.common.message.MessageExt;
 import com.alibaba.rocketmq.common.message.MessageQueue;
 import com.alibaba.rocketmq.remoting.RPCHook;
 import com.alibaba.rocketmq.tools.command.SubCommand;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+
+import java.io.UnsupportedEncodingException;
+import java.util.List;
+import java.util.Set;
 
 
 /**
- * 打印指定Topic的所有消息，某个时间区间，方便排查问题
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2014-6-22
+
+ *
+ * @author shijia.wxr
+ *
  */
 public class PrintMessageSubCommand implements SubCommand {
 
@@ -69,46 +69,24 @@ public class PrintMessageSubCommand implements SubCommand {
 
         opt =
                 new Option("b", "beginTimestamp ", true,
-                    "Begin timestamp[currentTimeMillis|yyyy-MM-dd#HH:mm:ss:SSS]");
+                        "Begin timestamp[currentTimeMillis|yyyy-MM-dd#HH:mm:ss:SSS]");
         opt.setRequired(false);
         options.addOption(opt);
 
         opt =
                 new Option("e", "endTimestamp ", true,
-                    "End timestamp[currentTimeMillis|yyyy-MM-dd#HH:mm:ss:SSS]");
+                        "End timestamp[currentTimeMillis|yyyy-MM-dd#HH:mm:ss:SSS]");
+        opt.setRequired(false);
+        options.addOption(opt);
+
+        opt =
+                new Option("d", "printBody ", true,
+                        "print body");
         opt.setRequired(false);
         options.addOption(opt);
 
         return options;
     }
-
-
-    public static void printMessage(final List<MessageExt> msgs, final String charsetName) {
-        for (MessageExt msg : msgs) {
-            try {
-                System.out.printf("MSGID: %s %s BODY: %s\n", msg.getMsgId(), msg.toString(),
-                    new String(msg.getBody(), charsetName));
-            }
-            catch (UnsupportedEncodingException e) {
-            }
-        }
-    }
-
-
-    public static long timestampFormat(final String value) {
-        long timestamp = 0;
-        try {
-            // 直接输入 long 类型的 timestamp
-            timestamp = Long.valueOf(value);
-        }
-        catch (NumberFormatException e) {
-            // 输入的为日期格式，精确到毫秒
-            timestamp = UtilAll.parseDate(value, UtilAll.yyyy_MM_dd_HH_mm_ss_SSS).getTime();
-        }
-
-        return timestamp;
-    }
-
 
     @Override
     public void execute(CommandLine commandLine, Options options, RPCHook rpcHook) {
@@ -122,6 +100,9 @@ public class PrintMessageSubCommand implements SubCommand {
 
             String subExpression = //
                     !commandLine.hasOption('s') ? "*" : commandLine.getOptionValue('s').trim();
+
+            boolean printBody = //
+                    !commandLine.hasOption('d') ? true : Boolean.parseBoolean(commandLine.getOptionValue('d').trim());
 
             consumer.start();
 
@@ -142,32 +123,52 @@ public class PrintMessageSubCommand implements SubCommand {
                     maxOffset = consumer.searchOffset(mq, timeValue);
                 }
 
-                READQ: for (long offset = minOffset; offset < maxOffset;) {
+                READQ:
+                for (long offset = minOffset; offset < maxOffset; ) {
                     try {
                         PullResult pullResult = consumer.pull(mq, subExpression, offset, 32);
                         offset = pullResult.getNextBeginOffset();
                         switch (pullResult.getPullStatus()) {
-                        case FOUND:
-                            printMessage(pullResult.getMsgFoundList(), charsetName);
-                            break;
-                        case NO_MATCHED_MSG:
-                        case NO_NEW_MSG:
-                        case OFFSET_ILLEGAL:
-                            break READQ;
+                            case FOUND:
+                                printMessage(pullResult.getMsgFoundList(), charsetName, printBody);
+                                break;
+                            case NO_MATCHED_MSG:
+                            case NO_NEW_MSG:
+                            case OFFSET_ILLEGAL:
+                                break READQ;
                         }
-                    }
-                    catch (Exception e) {
+                    } catch (Exception e) {
                         break;
                     }
                 }
             }
 
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             consumer.shutdown();
+        }
+    }
+
+    public static long timestampFormat(final String value) {
+        long timestamp = 0;
+        try {
+            timestamp = Long.parseLong(value);
+        } catch (NumberFormatException e) {
+
+            timestamp = UtilAll.parseDate(value, UtilAll.yyyy_MM_dd_HH_mm_ss_SSS).getTime();
+        }
+
+        return timestamp;
+    }
+
+    public static void printMessage(final List<MessageExt> msgs, final String charsetName, boolean printBody) {
+        for (MessageExt msg : msgs) {
+            try {
+                System.out.printf("MSGID: %s %s BODY: %s%n", msg.getMsgId(), msg.toString(),
+                        printBody ? new String(msg.getBody(), charsetName) : "NOT PRINT BODY");
+            } catch (UnsupportedEncodingException e) {
+            }
         }
     }
 }

@@ -1,16 +1,33 @@
 /**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+/**
  * $Id: MapedFileTest.java 1831 2013-05-16 01:39:51Z shijia.wxr $
  */
 package com.alibaba.rocketmq.store;
-
-import static org.junit.Assert.assertTrue;
-
-import java.io.IOException;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import java.io.IOException;
+
+import static org.junit.Assert.assertTrue;
 
 
 public class MapedFileTest {
@@ -45,30 +62,24 @@ public class MapedFileTest {
             System.out.println("Read: " + readString);
             assertTrue(readString.equals(StoreMessage));
 
-            // 禁止Buffer读写
+
             mapedFile.shutdown(1000);
 
-            // mapedFile对象不可用
+
             assertTrue(!mapedFile.isAvailable());
 
-            // 释放读到的Buffer
             selectMapedBufferResult.release();
 
-            // 内存真正释放掉
+
             assertTrue(mapedFile.isCleanupOver());
 
-            // 文件删除成功
+
             assertTrue(mapedFile.destroy(1000));
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-
-    /**
-     * 当前测试用例由于对mmap操作错误，会导致JVM CRASHED
-     */
     @Ignore
     public void test_jvm_crashed() {
         try {
@@ -85,8 +96,7 @@ public class MapedFileTest {
             selectMapedBufferResult.getByteBuffer().get(data);
             String readString = new String(data);
             System.out.println(readString);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }

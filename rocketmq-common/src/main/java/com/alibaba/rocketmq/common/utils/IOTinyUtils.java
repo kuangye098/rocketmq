@@ -1,32 +1,38 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package com.alibaba.rocketmq.common.utils;
 
-import java.io.BufferedReader;
-import java.io.CharArrayWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.Reader;
-import java.io.Writer;
+import com.alibaba.rocketmq.remoting.common.RemotingHelper;
+
+import java.io.*;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
 
 
 /**
- * IO操作
- * 
- * @author manhong.yqd<jodie.yqd@gmail.com>
- * 
+ * @author manhong.yqd
  */
 public class IOTinyUtils {
 
     static public String toString(InputStream input, String encoding) throws IOException {
-        return (null == encoding) ? toString(new InputStreamReader(input)) : toString(new InputStreamReader(
-            input, encoding));
+        return (null == encoding) ? toString(new InputStreamReader(input, RemotingHelper.DEFAULT_CHARSET)) : toString(new InputStreamReader(
+                input, encoding));
     }
 
 
@@ -40,7 +46,7 @@ public class IOTinyUtils {
     static public long copy(Reader input, Writer output) throws IOException {
         char[] buffer = new char[1 << 12];
         long count = 0;
-        for (int n = 0; (n = input.read(buffer)) >= 0;) {
+        for (int n = 0; (n = input.read(buffer)) >= 0; ) {
             output.write(buffer, 0, n);
             count += n;
         }
@@ -49,18 +55,17 @@ public class IOTinyUtils {
 
 
     /**
-     * 从输入流读行列表。保证不返回NULL。
+
      */
     static public List<String> readLines(Reader input) throws IOException {
         BufferedReader reader = toBufferedReader(input);
         List<String> list = new ArrayList<String>();
         String line = null;
-        for (;;) {
+        for (; ; ) {
             line = reader.readLine();
             if (null != line) {
                 list.add(line);
-            }
-            else {
+            } else {
                 break;
             }
         }
@@ -90,8 +95,7 @@ public class IOTinyUtils {
             tc = new FileOutputStream(tf).getChannel();
             sc = new FileInputStream(sf).getChannel();
             sc.transferTo(0, sc.size(), tc);
-        }
-        finally {
+        } finally {
             if (null != sc) {
                 sc.close();
             }
@@ -116,7 +120,7 @@ public class IOTinyUtils {
 
 
     /**
-     * 清理目录下的内容
+
      */
     public static void cleanDirectory(File directory) throws IOException {
         if (!directory.exists()) {
@@ -138,8 +142,7 @@ public class IOTinyUtils {
         for (File file : files) {
             try {
                 delete(file);
-            }
-            catch (IOException ioe) {
+            } catch (IOException ioe) {
                 exception = ioe;
             }
         }
@@ -155,8 +158,7 @@ public class IOTinyUtils {
         try {
             os = new FileOutputStream(file);
             os.write(data.getBytes(encoding));
-        }
-        finally {
+        } finally {
             if (null != os) {
                 os.close();
             }

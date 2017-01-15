@@ -1,25 +1,20 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.tools.command.consumer;
-
-import java.util.Set;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
 
 import com.alibaba.rocketmq.common.subscription.SubscriptionGroupConfig;
 import com.alibaba.rocketmq.remoting.RPCHook;
@@ -27,13 +22,15 @@ import com.alibaba.rocketmq.srvutil.ServerUtil;
 import com.alibaba.rocketmq.tools.admin.DefaultMQAdminExt;
 import com.alibaba.rocketmq.tools.command.CommandUtil;
 import com.alibaba.rocketmq.tools.command.SubCommand;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+
+import java.util.Set;
 
 
 /**
- * 修改、创建订阅组配置命令
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2013-7-21
+ * @author shijia.wxr
  */
 public class UpdateSubGroupSubCommand implements SubCommand {
 
@@ -112,31 +109,31 @@ public class UpdateSubGroupSubCommand implements SubCommand {
             // consumeEnable
             if (commandLine.hasOption('s')) {
                 subscriptionGroupConfig.setConsumeEnable(Boolean.parseBoolean(commandLine.getOptionValue('s')
-                    .trim()));
+                        .trim()));
             }
 
             // consumeFromMinEnable
             if (commandLine.hasOption('m')) {
                 subscriptionGroupConfig.setConsumeFromMinEnable(Boolean.parseBoolean(commandLine
-                    .getOptionValue('m').trim()));
+                        .getOptionValue('m').trim()));
             }
 
             // consumeBroadcastEnable
             if (commandLine.hasOption('d')) {
                 subscriptionGroupConfig.setConsumeBroadcastEnable(Boolean.parseBoolean(commandLine
-                    .getOptionValue('d').trim()));
+                        .getOptionValue('d').trim()));
             }
 
             // retryQueueNums
             if (commandLine.hasOption('q')) {
                 subscriptionGroupConfig.setRetryQueueNums(Integer.parseInt(commandLine.getOptionValue('q')
-                    .trim()));
+                        .trim()));
             }
 
             // retryMaxTimes
             if (commandLine.hasOption('r')) {
                 subscriptionGroupConfig.setRetryMaxTimes(Integer.parseInt(commandLine.getOptionValue('r')
-                    .trim()));
+                        .trim()));
             }
 
             // brokerId
@@ -147,7 +144,7 @@ public class UpdateSubGroupSubCommand implements SubCommand {
             // whichBrokerWhenConsumeSlowly
             if (commandLine.hasOption('w')) {
                 subscriptionGroupConfig.setWhichBrokerWhenConsumeSlowly(Long.parseLong(commandLine
-                    .getOptionValue('w').trim()));
+                        .getOptionValue('w').trim()));
             }
 
             if (commandLine.hasOption('b')) {
@@ -156,12 +153,11 @@ public class UpdateSubGroupSubCommand implements SubCommand {
                 defaultMQAdminExt.start();
 
                 defaultMQAdminExt.createAndUpdateSubscriptionGroupConfig(addr, subscriptionGroupConfig);
-                System.out.printf("create subscription group to %s success.\n", addr);
+                System.out.printf("create subscription group to %s success.%n", addr);
                 System.out.println(subscriptionGroupConfig);
                 return;
 
-            }
-            else if (commandLine.hasOption('c')) {
+            } else if (commandLine.hasOption('c')) {
                 String clusterName = commandLine.getOptionValue('c').trim();
 
                 defaultMQAdminExt.start();
@@ -169,19 +165,22 @@ public class UpdateSubGroupSubCommand implements SubCommand {
                 Set<String> masterSet =
                         CommandUtil.fetchMasterAddrByClusterName(defaultMQAdminExt, clusterName);
                 for (String addr : masterSet) {
-                    defaultMQAdminExt.createAndUpdateSubscriptionGroupConfig(addr, subscriptionGroupConfig);
-                    System.out.printf("create subscription group to %s success.\n", addr);
+                    try {
+                        defaultMQAdminExt.createAndUpdateSubscriptionGroupConfig(addr, subscriptionGroupConfig);
+                        System.out.printf("create subscription group to %s success.%n", addr);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Thread.sleep(1000 * 1);
+                    }
                 }
                 System.out.println(subscriptionGroupConfig);
                 return;
             }
 
             ServerUtil.printCommandLineHelp("mqadmin " + this.commandName(), options);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             defaultMQAdminExt.shutdown();
         }
     }

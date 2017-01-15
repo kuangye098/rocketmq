@@ -1,17 +1,18 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.common;
 
@@ -24,16 +25,12 @@ import java.net.UnknownHostException;
 
 
 /**
- * 服务器配置
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
+ * @author shijia.wxr
  */
 public class BrokerConfig {
-    private String rocketmqHome = System.getProperty(MixAll.ROCKETMQ_HOME_PROPERTY,
-        System.getenv(MixAll.ROCKETMQ_HOME_ENV));
+    private String rocketmqHome = System.getProperty(MixAll.ROCKETMQ_HOME_PROPERTY, System.getenv(MixAll.ROCKETMQ_HOME_ENV));
     @ImportantField
-    private String namesrvAddr = System.getProperty(MixAll.NAMESRV_ADDR_PROPERTY,
-        System.getenv(MixAll.NAMESRV_ADDR_ENV));
+    private String namesrvAddr = System.getProperty(MixAll.NAMESRV_ADDR_PROPERTY, System.getenv(MixAll.NAMESRV_ADDR_ENV));
     @ImportantField
     private String brokerIP1 = RemotingUtil.getLocalAddress();
     private String brokerIP2 = RemotingUtil.getLocalAddress();
@@ -45,16 +42,15 @@ public class BrokerConfig {
     private long brokerId = MixAll.MASTER_ID;
     private int brokerPermission = PermName.PERM_READ | PermName.PERM_WRITE;
     private int defaultTopicQueueNums = 8;
-    // 自动创建Topic功能是否开启（线上建议关闭）
     @ImportantField
     private boolean autoCreateTopicEnable = true;
-    // 自动创建以集群名字命名的Topic功能是否开启
+
     private boolean clusterTopicEnable = true;
-    // 自动创建以服务器名字命名的Topic功能是否开启
+
     private boolean brokerTopicEnable = true;
-    // 自动创建订阅组功能是否开启（线上建议关闭）
     @ImportantField
     private boolean autoCreateSubscriptionGroup = true;
+    private String messageStorePlugIn = "";
 
     private int sendMessageThreadPoolNums = 16 + Runtime.getRuntime().availableProcessors() * 4;
     private int pullMessageThreadPoolNums = 16 + Runtime.getRuntime().availableProcessors() * 2;
@@ -65,53 +61,133 @@ public class BrokerConfig {
 
     private int flushConsumerOffsetHistoryInterval = 1000 * 60;
 
-    // 是否拒绝接收事务消息
     @ImportantField
     private boolean rejectTransactionMessage = false;
-
-    // 是否从地址服务器寻找Name Server地址，正式发布后，默认值为false
     @ImportantField
     private boolean fetchNamesrvAddrByAddressServer = false;
-    
-    // 是否启用主从broker自动切换，默认值为false
-    @ImportantField
-    private boolean enableBrokerRoleSwitch = false;
-    
-    // 启用主从broker切换后,使用何种主角色，默认值ASYNC_MASTER
-    @ImportantField
-    private String switchBrokerRole = "ASYNC_MASTER";
+    private int sendThreadPoolQueueCapacity = 10000;
+    private int pullThreadPoolQueueCapacity = 10000;
 
-    // 发送消息对应的线程池阻塞队列size
-    private int sendThreadPoolQueueCapacity = 100000;
-
-    // 订阅消息对应的线程池阻塞队列size
-    private int pullThreadPoolQueueCapacity = 100000;
-
-    // 过滤服务器数量
     private int filterServerNums = 0;
 
-    // Consumer订阅消息时，Broker是否开启长轮询
     private boolean longPollingEnable = true;
 
-    // 如果是短轮询，服务器挂起时间
     private long shortPollingTimeMills = 1000;
 
-    // notify consumerId changed 开关
     private boolean notifyConsumerIdsChangedEnable = true;
 
-    // slave 是否需要纠正位点
-    private boolean offsetCheckInSlave = false;
+    private boolean highSpeedMode = false;
 
+    private boolean commercialEnable = true;
+    private int commercialTimerCount = 1;
+    private int commercialTransCount = 1;
+    private int commercialBigCount = 1;
+
+    private boolean transferMsgByHeap = true;
+    private int maxDelayTime = 40;
+
+
+    private String regionId = "DefaultRegion";
+    private int registerBrokerTimeoutMills = 6000;
+
+    private boolean slaveReadEnable = false;
+
+    private boolean disableConsumeIfConsumerReadSlowly = false;
+    private long consumerFallbehindThreshold = 1024 * 1024 * 1024 * 16;
+
+    private long waitTimeMillsInSendQueue = 200;
+
+    private long startAcceptSendRequestTimeStamp = 0L;
+
+    public long getStartAcceptSendRequestTimeStamp() {
+        return startAcceptSendRequestTimeStamp;
+    }
+
+    public void setStartAcceptSendRequestTimeStamp(final long startAcceptSendRequestTimeStamp) {
+        this.startAcceptSendRequestTimeStamp = startAcceptSendRequestTimeStamp;
+    }
+
+    public long getWaitTimeMillsInSendQueue() {
+        return waitTimeMillsInSendQueue;
+    }
+
+    public void setWaitTimeMillsInSendQueue(final long waitTimeMillsInSendQueue) {
+        this.waitTimeMillsInSendQueue = waitTimeMillsInSendQueue;
+    }
+
+    public long getConsumerFallbehindThreshold() {
+        return consumerFallbehindThreshold;
+    }
+
+    public void setConsumerFallbehindThreshold(final long consumerFallbehindThreshold) {
+        this.consumerFallbehindThreshold = consumerFallbehindThreshold;
+    }
+
+    public boolean isDisableConsumeIfConsumerReadSlowly() {
+        return disableConsumeIfConsumerReadSlowly;
+    }
+
+    public void setDisableConsumeIfConsumerReadSlowly(final boolean disableConsumeIfConsumerReadSlowly) {
+        this.disableConsumeIfConsumerReadSlowly = disableConsumeIfConsumerReadSlowly;
+    }
+
+    public boolean isSlaveReadEnable() {
+        return slaveReadEnable;
+    }
+
+    public void setSlaveReadEnable(final boolean slaveReadEnable) {
+        this.slaveReadEnable = slaveReadEnable;
+    }
 
     public static String localHostName() {
         try {
             return InetAddress.getLocalHost().getHostName();
-        }
-        catch (UnknownHostException e) {
+        } catch (UnknownHostException e) {
             e.printStackTrace();
         }
 
         return "DEFAULT_BROKER";
+    }
+
+    public int getRegisterBrokerTimeoutMills() {
+        return registerBrokerTimeoutMills;
+    }
+
+    public void setRegisterBrokerTimeoutMills(final int registerBrokerTimeoutMills) {
+        this.registerBrokerTimeoutMills = registerBrokerTimeoutMills;
+    }
+
+    public String getRegionId() {
+        return regionId;
+    }
+
+    public void setRegionId(final String regionId) {
+        this.regionId = regionId;
+    }
+
+    public boolean isTransferMsgByHeap() {
+        return transferMsgByHeap;
+    }
+
+    public void setTransferMsgByHeap(final boolean transferMsgByHeap) {
+        this.transferMsgByHeap = transferMsgByHeap;
+    }
+
+    public String getMessageStorePlugIn() {
+        return messageStorePlugIn;
+    }
+
+    public void setMessageStorePlugIn(String messageStorePlugIn) {
+        this.messageStorePlugIn = messageStorePlugIn;
+    }
+
+    public boolean isHighSpeedMode() {
+        return highSpeedMode;
+    }
+
+
+    public void setHighSpeedMode(final boolean highSpeedMode) {
+        this.highSpeedMode = highSpeedMode;
     }
 
 
@@ -385,33 +461,45 @@ public class BrokerConfig {
     }
 
 
-    public boolean isOffsetCheckInSlave() {
-        return offsetCheckInSlave;
+    public boolean isCommercialEnable() {
+        return commercialEnable;
     }
 
 
-    public void setOffsetCheckInSlave(boolean offsetCheckInSlave) {
-        this.offsetCheckInSlave = offsetCheckInSlave;
+    public void setCommercialEnable(final boolean commercialEnable) {
+        this.commercialEnable = commercialEnable;
+    }
+
+    public int getCommercialTimerCount() {
+        return commercialTimerCount;
+    }
+
+    public void setCommercialTimerCount(final int commercialTimerCount) {
+        this.commercialTimerCount = commercialTimerCount;
+    }
+
+    public int getCommercialTransCount() {
+        return commercialTransCount;
+    }
+
+    public void setCommercialTransCount(final int commercialTransCount) {
+        this.commercialTransCount = commercialTransCount;
+    }
+
+    public int getCommercialBigCount() {
+        return commercialBigCount;
+    }
+
+    public void setCommercialBigCount(final int commercialBigCount) {
+        this.commercialBigCount = commercialBigCount;
+    }
+
+    public int getMaxDelayTime() {
+        return maxDelayTime;
     }
 
 
-	public boolean isEnableBrokerRoleSwitch() {
-		return enableBrokerRoleSwitch;
-	}
-
-
-	public void setEnableBrokerRoleSwitch(boolean enableBrokerRoleSwitch) {
-		this.enableBrokerRoleSwitch = enableBrokerRoleSwitch;
-	}
-
-
-	public String getSwitchBrokerRole() {
-		return switchBrokerRole;
-	}
-
-
-	public void setSwitchBrokerRole(String switchBrokerRole) {
-		this.switchBrokerRole = switchBrokerRole;
-	}
-    
+    public void setMaxDelayTime(final int maxDelayTime) {
+        this.maxDelayTime = maxDelayTime;
+    }
 }

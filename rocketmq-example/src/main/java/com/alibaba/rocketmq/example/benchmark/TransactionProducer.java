@@ -1,20 +1,28 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.example.benchmark;
 
+import com.alibaba.rocketmq.client.exception.MQClientException;
+import com.alibaba.rocketmq.client.producer.*;
+import com.alibaba.rocketmq.common.message.Message;
+import com.alibaba.rocketmq.common.message.MessageExt;
+import com.alibaba.rocketmq.remoting.common.RemotingHelper;
+
+import java.io.UnsupportedEncodingException;
 import java.util.LinkedList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -22,19 +30,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.alibaba.rocketmq.client.exception.MQClientException;
-import com.alibaba.rocketmq.client.producer.LocalTransactionExecuter;
-import com.alibaba.rocketmq.client.producer.LocalTransactionState;
-import com.alibaba.rocketmq.client.producer.SendResult;
-import com.alibaba.rocketmq.client.producer.TransactionCheckListener;
-import com.alibaba.rocketmq.client.producer.TransactionMQProducer;
-import com.alibaba.rocketmq.common.message.Message;
-import com.alibaba.rocketmq.common.message.MessageExt;
-
-
-/**
- * 性能测试，多线程同步发送事务消息
- */
 public class TransactionProducer {
     private static int threadCount;
     private static int messageSize;
@@ -42,7 +37,7 @@ public class TransactionProducer {
     private static boolean ischeckffalse;
 
 
-    public static void main(String[] args) throws MQClientException {
+    public static void main(String[] args) throws MQClientException, UnsupportedEncodingException {
         threadCount = args.length >= 1 ? Integer.parseInt(args[0]) : 32;
         messageSize = args.length >= 2 ? Integer.parseInt(args[1]) : 1024 * 2;
         ischeck = args.length >= 3 ? Boolean.parseBoolean(args[2]) : false;
@@ -79,13 +74,13 @@ public class TransactionProducer {
                     final double averageRT = ((end[5] - begin[5]) / (double) (end[3] - begin[3]));
 
                     System.out.printf(
-                        "Send TPS: %d Max RT: %d Average RT: %7.3f Send Failed: %d Response Failed: %d transaction checkCount: %d \n"//
-                        , sendTps//
-                        , statsBenchmark.getSendMessageMaxRT().get()//
-                        , averageRT//
-                        , end[2]//
-                        , end[4]//
-                        , end[6]);
+                            "Send TPS: %d Max RT: %d Average RT: %7.3f Send Failed: %d Response Failed: %d transaction checkCount: %d %n"//
+                            , sendTps//
+                            , statsBenchmark.getSendMessageMaxRT().get()//
+                            , averageRT//
+                            , end[2]//
+                            , end[4]//
+                            , end[6]);
                 }
             }
 
@@ -94,8 +89,7 @@ public class TransactionProducer {
             public void run() {
                 try {
                     this.printStats();
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
@@ -132,14 +126,13 @@ public class TransactionProducer {
                             while (currentRT > prevMaxRT) {
                                 boolean updated =
                                         statsBenchmark.getSendMessageMaxRT().compareAndSet(prevMaxRT,
-                                            currentRT);
+                                                currentRT);
                                 if (updated)
                                     break;
 
                                 prevMaxRT = statsBenchmark.getSendMessageMaxRT().get();
                             }
-                        }
-                        catch (MQClientException e) {
+                        } catch (MQClientException e) {
                             statsBenchmark.getSendRequestFailedCount().incrementAndGet();
                         }
                     }
@@ -149,7 +142,7 @@ public class TransactionProducer {
     }
 
 
-    private static Message buildMessage(final int messageSize) {
+    private static Message buildMessage(final int messageSize) throws UnsupportedEncodingException {
         Message msg = new Message();
         msg.setTopic("BenchmarkTest");
 
@@ -158,7 +151,7 @@ public class TransactionProducer {
             sb.append("hello baby");
         }
 
-        msg.setBody(sb.toString().getBytes());
+        msg.setBody(sb.toString().getBytes(RemotingHelper.DEFAULT_CHARSET));
 
         return msg;
     }
@@ -191,7 +184,7 @@ class TransactionCheckListenerBImpl implements TransactionCheckListener {
 
 
     public TransactionCheckListenerBImpl(boolean ischeckffalse,
-            StatsBenchmarkTProducer statsBenchmarkTProducer) {
+                                         StatsBenchmarkTProducer statsBenchmarkTProducer) {
         this.ischeckffalse = ischeckffalse;
         this.statsBenchmarkTProducer = statsBenchmarkTProducer;
     }
@@ -229,14 +222,14 @@ class StatsBenchmarkTProducer {
 
 
     public Long[] createSnapshot() {
-        Long[] snap = new Long[] {//
+        Long[] snap = new Long[]{//
                 System.currentTimeMillis(),//
-                        this.sendRequestSuccessCount.get(),//
-                        this.sendRequestFailedCount.get(),//
-                        this.receiveResponseSuccessCount.get(),//
-                        this.receiveResponseFailedCount.get(),//
-                        this.sendMessageSuccessTimeTotal.get(), //
-                        this.checkRequestSuccessCount.get(), };
+                this.sendRequestSuccessCount.get(),//
+                this.sendRequestFailedCount.get(),//
+                this.receiveResponseSuccessCount.get(),//
+                this.receiveResponseFailedCount.get(),//
+                this.sendMessageSuccessTimeTotal.get(), //
+                this.checkRequestSuccessCount.get(),};
 
         return snap;
     }

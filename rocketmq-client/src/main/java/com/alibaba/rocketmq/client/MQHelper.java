@@ -1,57 +1,65 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.client;
-
-import java.util.Set;
-import java.util.TreeSet;
-
-import org.slf4j.Logger;
 
 import com.alibaba.rocketmq.client.consumer.DefaultMQPullConsumer;
 import com.alibaba.rocketmq.client.log.ClientLogger;
 import com.alibaba.rocketmq.common.message.MessageQueue;
 import com.alibaba.rocketmq.common.protocol.heartbeat.MessageModel;
+import org.slf4j.Logger;
+
+import java.util.Set;
+import java.util.TreeSet;
 
 
 /**
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2013-11-13
+ * @author shijia.wxr
  */
 public class MQHelper {
+    public static void resetOffsetByTimestamp(//
+                                              final MessageModel messageModel,//
+                                              final String consumerGroup, //
+                                              final String topic, //
+                                              final long timestamp) throws Exception {
+        resetOffsetByTimestamp(messageModel, "DEFAULT", consumerGroup, topic, timestamp);
+    }
+
     /**
      * Reset consumer topic offset according to time
-     * 
+     *
      * @param messageModel
-     *            which model
+     *         which model
      * @param instanceName
-     *            which instance
+     *         which instance
      * @param consumerGroup
-     *            consumer group
+     *         consumer group
      * @param topic
-     *            topic
+     *         topic
      * @param timestamp
-     *            time
+     *         time
+     *
      * @throws Exception
      */
     public static void resetOffsetByTimestamp(//
-            final MessageModel messageModel,//
-            final String instanceName,//
-            final String consumerGroup, //
-            final String topic, //
-            final long timestamp) throws Exception {
+                                              final MessageModel messageModel,//
+                                              final String instanceName,//
+                                              final String consumerGroup, //
+                                              final String topic, //
+                                              final long timestamp) throws Exception {
         final Logger log = ClientLogger.getLog();
 
         DefaultMQPullConsumer consumer = new DefaultMQPullConsumer(consumerGroup);
@@ -69,29 +77,18 @@ public class MQHelper {
                     if (offset >= 0) {
                         consumer.updateConsumeOffset(mq, offset);
                         log.info("resetOffsetByTimestamp updateConsumeOffset success, {} {} {}",
-                            consumerGroup, offset, mq);
+                                consumerGroup, offset, mq);
                     }
                 }
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.warn("resetOffsetByTimestamp Exception", e);
             throw e;
-        }
-        finally {
+        } finally {
             if (mqs != null) {
                 consumer.getDefaultMQPullConsumerImpl().getOffsetStore().persistAll(mqs);
             }
             consumer.shutdown();
         }
-    }
-
-
-    public static void resetOffsetByTimestamp(//
-            final MessageModel messageModel,//
-            final String consumerGroup, //
-            final String topic, //
-            final long timestamp) throws Exception {
-        resetOffsetByTimestamp(messageModel, "DEFAULT", consumerGroup, topic, timestamp);
     }
 }

@@ -1,28 +1,44 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package com.alibaba.rocketmq.common.subscription;
 
 import com.alibaba.rocketmq.common.MixAll;
 
 
 /**
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2013-6-18
+ * @author shijia.wxr
+ *
  */
 public class SubscriptionGroupConfig {
-    // 订阅组名
+
     private String groupName;
-    // 消费功能是否开启
+
     private boolean consumeEnable = true;
-    // 是否允许从队列最小位置开始消费，线上默认会设置为false
     private boolean consumeFromMinEnable = true;
-    // 是否允许广播方式消费
+
     private boolean consumeBroadcastEnable = true;
-    // 消费失败的消息放到一个重试队列，每个订阅组配置几个重试队列
+
     private int retryQueueNums = 1;
-    // 重试消费最大次数，超过则投递到死信队列，不再投递，并报警
+
     private int retryMaxTimes = 16;
-    // 从哪个Broker开始消费
+
     private long brokerId = MixAll.MASTER_ID;
-    // 发现消息堆积后，将Consumer的消费请求重定向到另外一台Slave机器
+
     private long whichBrokerWhenConsumeSlowly = 1;
 
 
@@ -143,8 +159,7 @@ public class SubscriptionGroupConfig {
         if (groupName == null) {
             if (other.groupName != null)
                 return false;
-        }
-        else if (!groupName.equals(other.groupName))
+        } else if (!groupName.equals(other.groupName))
             return false;
         if (retryMaxTimes != other.retryMaxTimes)
             return false;

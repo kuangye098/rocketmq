@@ -1,38 +1,42 @@
 /**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+/**
  * $Id: ExceptionTest.java 1831 2013-05-16 01:39:51Z shijia.wxr $
  */
 package com.alibaba.rocketmq.remoting;
 
-import static org.junit.Assert.assertTrue;
-import io.netty.channel.ChannelHandlerContext;
-
-import java.util.concurrent.Executors;
-
-import org.junit.Test;
-
 import com.alibaba.rocketmq.remoting.exception.RemotingConnectException;
 import com.alibaba.rocketmq.remoting.exception.RemotingSendRequestException;
 import com.alibaba.rocketmq.remoting.exception.RemotingTimeoutException;
-import com.alibaba.rocketmq.remoting.netty.NettyClientConfig;
-import com.alibaba.rocketmq.remoting.netty.NettyRemotingClient;
-import com.alibaba.rocketmq.remoting.netty.NettyRemotingServer;
-import com.alibaba.rocketmq.remoting.netty.NettyRequestProcessor;
-import com.alibaba.rocketmq.remoting.netty.NettyServerConfig;
+import com.alibaba.rocketmq.remoting.netty.*;
 import com.alibaba.rocketmq.remoting.protocol.RemotingCommand;
+import io.netty.channel.ChannelHandlerContext;
+import org.junit.Test;
+
+import java.util.concurrent.Executors;
+
+import static org.junit.Assert.assertTrue;
 
 
 /**
- * @author shijia.wxr<vintage.wang@gmail.com>
+ * @author shijia.wxr
  */
 public class ExceptionTest {
-    private static RemotingClient createRemotingClient() {
-        NettyClientConfig config = new NettyClientConfig();
-        RemotingClient client = new NettyRemotingClient(config);
-        client.start();
-        return client;
-    }
-
-
     private static RemotingServer createRemotingServer() throws InterruptedException {
         NettyServerConfig config = new NettyServerConfig();
         RemotingServer client = new NettyRemotingServer(config);
@@ -46,11 +50,15 @@ public class ExceptionTest {
                 request.setRemark("hello, I am respponse " + ctx.channel().remoteAddress());
                 return request;
             }
+
+            @Override
+            public boolean rejectRequest() {
+                return false;
+            }
         }, Executors.newCachedThreadPool());
         client.start();
         return client;
     }
-
 
     @Test
     public void test_CONNECT_EXCEPTION() {
@@ -60,17 +68,13 @@ public class ExceptionTest {
         RemotingCommand response = null;
         try {
             response = client.invokeSync("localhost:8888", request, 1000 * 3);
-        }
-        catch (RemotingConnectException e) {
+        } catch (RemotingConnectException e) {
             e.printStackTrace();
-        }
-        catch (RemotingSendRequestException e) {
+        } catch (RemotingSendRequestException e) {
             e.printStackTrace();
-        }
-        catch (RemotingTimeoutException e) {
+        } catch (RemotingTimeoutException e) {
             e.printStackTrace();
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
         System.out.println("invoke result = " + response);
@@ -78,6 +82,13 @@ public class ExceptionTest {
 
         client.shutdown();
         System.out.println("-----------------------------------------------------------------");
+    }
+
+    private static RemotingClient createRemotingClient() {
+        NettyClientConfig config = new NettyClientConfig();
+        RemotingClient client = new NettyRemotingClient(config);
+        client.start();
+        return client;
     }
 
 }

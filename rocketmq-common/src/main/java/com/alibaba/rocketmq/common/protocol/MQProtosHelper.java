@@ -1,3 +1,20 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package com.alibaba.rocketmq.common.protocol;
 
 import com.alibaba.rocketmq.common.protocol.header.namesrv.RegisterBrokerRequestHeader;
@@ -9,16 +26,11 @@ import com.alibaba.rocketmq.remoting.protocol.RemotingCommand;
 
 
 /**
- * 协议辅助类
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
+ * @author shijia.wxr
  */
 public class MQProtosHelper {
-    /**
-     * 将Broker地址注册到Name Server
-     */
     public static boolean registerBrokerToNameServer(final String nsaddr, final String brokerAddr,
-            final long timeoutMillis) {
+                                                     final long timeoutMillis) {
         RegisterBrokerRequestHeader requestHeader = new RegisterBrokerRequestHeader();
         requestHeader.setBrokerAddr(brokerAddr);
 
@@ -30,17 +42,13 @@ public class MQProtosHelper {
             if (response != null) {
                 return ResponseCode.SUCCESS == response.getCode();
             }
-        }
-        catch (RemotingConnectException e) {
+        } catch (RemotingConnectException e) {
             e.printStackTrace();
-        }
-        catch (RemotingSendRequestException e) {
+        } catch (RemotingSendRequestException e) {
             e.printStackTrace();
-        }
-        catch (RemotingTimeoutException e) {
+        } catch (RemotingTimeoutException e) {
             e.printStackTrace();
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
 

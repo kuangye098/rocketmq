@@ -1,19 +1,22 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.store;
+
+import com.alibaba.rocketmq.store.stats.BrokerStatsManager;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -21,29 +24,25 @@ import java.util.List;
 
 
 /**
- * 访问消息返回结果
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2013-7-21
+ * @author shijia.wxr
  */
 public class GetMessageResult {
-    // 多个连续的消息集合
+
     private final List<SelectMapedBufferResult> messageMapedList =
             new ArrayList<SelectMapedBufferResult>(100);
-    // 用来向Consumer传送消息
+
     private final List<ByteBuffer> messageBufferList = new ArrayList<ByteBuffer>(100);
-    // 枚举变量，取消息结果
+
     private GetMessageStatus status;
-    // 当被过滤后，返回下一次开始的Offset
     private long nextBeginOffset;
-    // 逻辑队列中的最小Offset
     private long minOffset;
-    // 逻辑队列中的最大Offset
     private long maxOffset;
-    // ByteBuffer 总字节数
+
     private int bufferTotalSize = 0;
-    // 是否建议从slave拉消息
+
     private boolean suggestPullingFromSlave = false;
+
+    private int msgCount4Commercial = 0;
 
 
     public GetMessageResult() {
@@ -104,6 +103,8 @@ public class GetMessageResult {
         this.messageMapedList.add(mapedBuffer);
         this.messageBufferList.add(mapedBuffer.getByteBuffer());
         this.bufferTotalSize += mapedBuffer.getSize();
+        this.msgCount4Commercial += (int) Math.ceil(
+                mapedBuffer.getSize() / BrokerStatsManager.SIZE_PER_COUNT);
     }
 
 
@@ -136,6 +137,14 @@ public class GetMessageResult {
 
     public void setSuggestPullingFromSlave(boolean suggestPullingFromSlave) {
         this.suggestPullingFromSlave = suggestPullingFromSlave;
+    }
+
+    public int getMsgCount4Commercial() {
+        return msgCount4Commercial;
+    }
+
+    public void setMsgCount4Commercial(int msgCount4Commercial) {
+        this.msgCount4Commercial = msgCount4Commercial;
     }
 
 

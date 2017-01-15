@@ -1,15 +1,23 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package com.alibaba.rocketmq.tools.command.offset;
 
-import java.util.Iterator;
-import java.util.Map;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.PosixParser;
-
 import com.alibaba.rocketmq.client.exception.MQClientException;
-import com.alibaba.rocketmq.common.MixAll;
 import com.alibaba.rocketmq.common.UtilAll;
 import com.alibaba.rocketmq.common.message.MessageQueue;
 import com.alibaba.rocketmq.common.protocol.ResponseCode;
@@ -17,26 +25,37 @@ import com.alibaba.rocketmq.remoting.RPCHook;
 import com.alibaba.rocketmq.srvutil.ServerUtil;
 import com.alibaba.rocketmq.tools.admin.DefaultMQAdminExt;
 import com.alibaba.rocketmq.tools.command.SubCommand;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.PosixParser;
+
+import java.util.Iterator;
+import java.util.Map;
 
 
 /**
- * 根据时间设置消费进度，客户端无需重启。
- * 
- * @author: manhong.yqd<jodie.yqd@gmail.com>
- * @since: 13-9-12
+ * @author manhong.yqd
  */
 public class ResetOffsetByTimeCommand implements SubCommand {
+    public static void main(String[] args) {
+        ResetOffsetByTimeCommand cmd = new ResetOffsetByTimeCommand();
+        Options options = ServerUtil.buildCommandlineOptions(new Options());
+        String[] subargs = new String[]{"-t Jodie_rest_test", "-g CID_Jodie_rest_test", "-s -1", "-f true"};
+        final CommandLine commandLine =
+                ServerUtil.parseCmdLine("mqadmin " + cmd.commandName(), subargs, cmd.buildCommandlineOptions(options), new PosixParser());
+        cmd.execute(commandLine, options, null);
+    }
+
     @Override
     public String commandName() {
         return "resetOffsetByTime";
     }
 
-
     @Override
     public String commandDesc() {
         return "Reset consumer offset by timestamp(without client restart).";
     }
-
 
     @Override
     public Options buildCommandlineOptions(Options options) {
@@ -48,18 +67,19 @@ public class ResetOffsetByTimeCommand implements SubCommand {
         opt.setRequired(true);
         options.addOption(opt);
 
-        opt =
-                new Option("s", "timestamp", true,
-                    "set the timestamp[currentTimeMillis|yyyy-MM-dd#HH:mm:ss:SSS]");
+        opt = new Option("s", "timestamp", true, "set the timestamp[now|currentTimeMillis|yyyy-MM-dd#HH:mm:ss:SSS]");
         opt.setRequired(true);
         options.addOption(opt);
 
         opt = new Option("f", "force", true, "set the force rollback by timestamp switch[true|false]");
         opt.setRequired(false);
         options.addOption(opt);
+
+        opt = new Option("c", "cplus", false, "reset c++ client offset");
+        opt.setRequired(false);
+        options.addOption(opt);
         return options;
     }
-
 
     @Override
     public void execute(CommandLine commandLine, Options options, RPCHook rpcHook) {
@@ -69,13 +89,14 @@ public class ResetOffsetByTimeCommand implements SubCommand {
             String group = commandLine.getOptionValue("g").trim();
             String topic = commandLine.getOptionValue("t").trim();
             String timeStampStr = commandLine.getOptionValue("s").trim();
-            long timestamp = 0;
+            long timestamp = timeStampStr.equals("now") ? System.currentTimeMillis() : 0;
+
             try {
-                // 直接输入 long 类型的 timestamp
-                timestamp = Long.valueOf(timeStampStr);
-            }
-            catch (NumberFormatException e) {
-                // 输入的为日期格式，精确到毫秒
+                if (timestamp == 0) {
+                    timestamp = Long.parseLong(timeStampStr);
+                }
+            } catch (NumberFormatException e) {
+
                 timestamp = UtilAll.parseDate(timeStampStr, UtilAll.yyyy_MM_dd_HH_mm_ss_SSS).getTime();
             }
 
@@ -84,57 +105,44 @@ public class ResetOffsetByTimeCommand implements SubCommand {
                 force = Boolean.valueOf(commandLine.getOptionValue("f").trim());
             }
 
+            boolean isC = false;
+            if (commandLine.hasOption('c')) {
+                isC = true;
+            }
+
             defaultMQAdminExt.start();
             Map<MessageQueue, Long> offsetTable;
             try {
-                offsetTable = defaultMQAdminExt.resetOffsetByTimestamp(topic, group, timestamp, force);
-            }
-            catch (MQClientException e) {
+                offsetTable = defaultMQAdminExt.resetOffsetByTimestamp(topic, group, timestamp, force, isC);
+            } catch (MQClientException e) {
                 if (ResponseCode.CONSUMER_NOT_ONLINE == e.getResponseCode()) {
-                    ResetOffsetByTimeOldCommand.resetOffset(defaultMQAdminExt, group, topic, timestamp,
-                        force, timeStampStr);
+                    ResetOffsetByTimeOldCommand.resetOffset(defaultMQAdminExt, group, topic, timestamp, force, timeStampStr);
                     return;
                 }
                 throw e;
             }
 
-            System.out
-                .printf(
-                    "rollback consumer offset by specified group[%s], topic[%s], force[%s], timestamp(string)[%s], timestamp(long)[%s]\n",
+            System.out.printf(
+                    "rollback consumer offset by specified group[%s], topic[%s], force[%s], timestamp(string)[%s], timestamp(long)[%s]%n",
                     group, topic, force, timeStampStr, timestamp);
 
-            System.out.printf("%-40s  %-40s  %-40s\n",//
-                "#brokerName",//
-                "#queueId",//
-                "#offset");
+            System.out.printf("%-40s  %-40s  %-40s%n",//
+                    "#brokerName",//
+                    "#queueId",//
+                    "#offset");
 
             Iterator<Map.Entry<MessageQueue, Long>> iterator = offsetTable.entrySet().iterator();
             while (iterator.hasNext()) {
                 Map.Entry<MessageQueue, Long> entry = iterator.next();
-                System.out.printf("%-40s  %-40d  %-40d\n",//
-                    UtilAll.frontStringAtLeast(entry.getKey().getBrokerName(), 32),//
-                    entry.getKey().getQueueId(),//
-                    entry.getValue());
+                System.out.printf("%-40s  %-40d  %-40d%n",//
+                        UtilAll.frontStringAtLeast(entry.getKey().getBrokerName(), 32),//
+                        entry.getKey().getQueueId(),//
+                        entry.getValue());
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             defaultMQAdminExt.shutdown();
         }
-    }
-
-
-    public static void main(String[] args) {
-        System.setProperty(MixAll.NAMESRV_ADDR_PROPERTY, "127.0.0.1:9876");
-        ResetOffsetByTimeCommand cmd = new ResetOffsetByTimeCommand();
-        Options options = ServerUtil.buildCommandlineOptions(new Options());
-        String[] subargs =
-                new String[] { "-t qatest_TopicTest", "-g qatest_consumer", "-s 1389098416742", "-f true" };
-        final CommandLine commandLine =
-                ServerUtil.parseCmdLine("mqadmin " + cmd.commandName(), subargs,
-                    cmd.buildCommandlineOptions(options), new PosixParser());
-        cmd.execute(commandLine, options, null);
     }
 }

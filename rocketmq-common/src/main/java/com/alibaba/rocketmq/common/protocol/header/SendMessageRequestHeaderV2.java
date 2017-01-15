@@ -1,3 +1,20 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package com.alibaba.rocketmq.common.protocol.header;
 
 import com.alibaba.rocketmq.remoting.CommandCustomHeader;
@@ -7,9 +24,7 @@ import com.alibaba.rocketmq.remoting.exception.RemotingCommandException;
 
 
 /**
- * 为减少网络传输数量准备
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
+ * @author shijia.wxr
  */
 public class SendMessageRequestHeaderV2 implements CommandCustomHeader {
     @CFNotNull
@@ -35,14 +50,9 @@ public class SendMessageRequestHeaderV2 implements CommandCustomHeader {
     @CFNullable
     private boolean k;// unitMode = false;
 
+    private Integer l; // consumeRetryTimes
 
-    @Override
-    public void checkFields() throws RemotingCommandException {
-    }
-
-
-    public static SendMessageRequestHeader createSendMessageRequestHeaderV1(
-            final SendMessageRequestHeaderV2 v2) {
+    public static SendMessageRequestHeader createSendMessageRequestHeaderV1(final SendMessageRequestHeaderV2 v2) {
         SendMessageRequestHeader v1 = new SendMessageRequestHeader();
         v1.setProducerGroup(v2.a);
         v1.setTopic(v2.b);
@@ -55,12 +65,11 @@ public class SendMessageRequestHeaderV2 implements CommandCustomHeader {
         v1.setProperties(v2.i);
         v1.setReconsumeTimes(v2.j);
         v1.setUnitMode(v2.k);
+        v1.setMaxReconsumeTimes(v2.l);
         return v1;
     }
 
-
-    public static SendMessageRequestHeaderV2 createSendMessageRequestHeaderV2(
-            final SendMessageRequestHeader v1) {
+    public static SendMessageRequestHeaderV2 createSendMessageRequestHeaderV2(final SendMessageRequestHeader v1) {
         SendMessageRequestHeaderV2 v2 = new SendMessageRequestHeaderV2();
         v2.a = v1.getProducerGroup();
         v2.b = v1.getTopic();
@@ -73,9 +82,13 @@ public class SendMessageRequestHeaderV2 implements CommandCustomHeader {
         v2.i = v1.getProperties();
         v2.j = v1.getReconsumeTimes();
         v2.k = v1.isUnitMode();
+        v2.l = (v1.getMaxReconsumeTimes());
         return v2;
     }
 
+    @Override
+    public void checkFields() throws RemotingCommandException {
+    }
 
     public String getA() {
         return a;
@@ -184,5 +197,15 @@ public class SendMessageRequestHeaderV2 implements CommandCustomHeader {
 
     public void setK(boolean k) {
         this.k = k;
+    }
+
+
+    public Integer getL() {
+        return l;
+    }
+
+
+    public void setL(final Integer l) {
+        this.l = l;
     }
 }

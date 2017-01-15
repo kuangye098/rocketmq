@@ -1,39 +1,39 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.store;
 
+import com.alibaba.rocketmq.common.ServiceThread;
+import com.alibaba.rocketmq.common.UtilAll;
+import com.alibaba.rocketmq.common.constant.LoggerName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.alibaba.rocketmq.common.ServiceThread;
-import com.alibaba.rocketmq.common.UtilAll;
-import com.alibaba.rocketmq.common.constant.LoggerName;
-
 
 /**
  * Create MapedFile in advance
- * 
- * @author shijia.wxr<vintage.wang@gmail.com>
- * @since 2013-7-21
+ *
+ * @author shijia.wxr
  */
 public class AllocateMapedFileService extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.StoreLoggerName);
@@ -43,6 +43,12 @@ public class AllocateMapedFileService extends ServiceThread {
     private PriorityBlockingQueue<AllocateRequest> requestQueue =
             new PriorityBlockingQueue<AllocateRequest>();
     private volatile boolean hasException = false;
+    private DefaultMessageStore messageStore;
+
+
+    public AllocateMapedFileService(DefaultMessageStore messageStore) {
+        this.messageStore = messageStore;
+    }
 
 
     public MapedFile putRequestAndReturnMapedFile(String nextFilePath, String nextNextFilePath, int fileSize) {
@@ -54,14 +60,14 @@ public class AllocateMapedFileService extends ServiceThread {
         if (nextPutOK) {
             boolean offerOK = this.requestQueue.offer(nextReq);
             if (!offerOK) {
-                log.warn("add a request to preallocate queue failed");
+                log.warn("never expetced here, add a request to preallocate queue failed");
             }
         }
 
         if (nextNextPutOK) {
             boolean offerOK = this.requestQueue.offer(nextNextReq);
             if (!offerOK) {
-                log.warn("add a request to preallocate queue failed");
+                log.warn("never expetced here, add a request to preallocate queue failed");
             }
         }
 
@@ -76,15 +82,15 @@ public class AllocateMapedFileService extends ServiceThread {
                 boolean waitOK = result.getCountDownLatch().await(WaitTimeOut, TimeUnit.MILLISECONDS);
                 if (!waitOK) {
                     log.warn("create mmap timeout " + result.getFilePath() + " " + result.getFileSize());
+                    return null;
+                } else {
+                    this.requestTable.remove(nextFilePath);
+                    return result.getMapedFile();
                 }
-                this.requestTable.remove(nextFilePath);
-                return result.getMapedFile();
-            }
-            else {
+            } else {
                 log.error("find preallocate mmap failed, this never happen");
             }
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             log.warn(this.getServiceName() + " service has exception. ", e);
         }
 
@@ -104,8 +110,7 @@ public class AllocateMapedFileService extends ServiceThread {
 
         try {
             this.thread.join(this.getJointime());
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
@@ -132,12 +137,19 @@ public class AllocateMapedFileService extends ServiceThread {
      * Only interrupted by the external thread, will return false
      */
     private boolean mmapOperation() {
+        boolean isSuccess = false;
         AllocateRequest req = null;
         try {
             req = this.requestQueue.take();
-            if (null == this.requestTable.get(req.getFilePath())) {
+            AllocateRequest expectedRequest = this.requestTable.get(req.getFilePath());
+            if (null == expectedRequest) {
                 log.warn("this mmap request expired, maybe cause timeout " + req.getFilePath() + " "
                         + req.getFileSize());
+                return true;
+            }
+            if (expectedRequest != req) {
+                log.warn("never expected here,  maybe cause timeout " + req.getFilePath() + " "
+                        + req.getFileSize() + ", req:" + req + ", expectedRequest:" + expectedRequest);
                 return true;
             }
 
@@ -151,27 +163,41 @@ public class AllocateMapedFileService extends ServiceThread {
                             + " " + req.getFilePath() + " " + req.getFileSize());
                 }
 
+                // pre write mappedFile
+                if (mapedFile.getFileSize() >= this.messageStore.getMessageStoreConfig()
+                        .getMapedFileSizeCommitLog() //
+                        && //
+                        this.messageStore.getMessageStoreConfig().isWarmMapedFileEnable()) {
+                    mapedFile.warmMappedFile(this.messageStore.getMessageStoreConfig().getFlushDiskType(),
+                            this.messageStore.getMessageStoreConfig().getFlushLeastPagesWhenWarmMapedFile());
+                }
+
                 req.setMapedFile(mapedFile);
                 this.hasException = false;
+                isSuccess = true;
             }
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             log.warn(this.getServiceName() + " service has exception, maybe by shutdown");
             this.hasException = true;
             return false;
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             log.warn(this.getServiceName() + " service has exception. ", e);
             this.hasException = true;
-        }
-        finally {
-            if (req != null)
+            if (null != req) {
+                requestQueue.offer(req);
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException e1) {
+                }
+            }
+        } finally {
+            if (req != null && isSuccess)
                 req.getCountDownLatch().countDown();
         }
         return true;
     }
 
-    class AllocateRequest implements Comparable<AllocateRequest> {
+    static class AllocateRequest implements Comparable<AllocateRequest> {
         // Full file path
         private String filePath;
         private int fileSize;
@@ -226,7 +252,55 @@ public class AllocateMapedFileService extends ServiceThread {
 
 
         public int compareTo(AllocateRequest other) {
-            return this.fileSize < other.fileSize ? 1 : this.fileSize > other.fileSize ? -1 : 0;
+            if (this.fileSize < other.fileSize)
+                return 1;
+            else if (this.fileSize > other.fileSize) {
+                return -1;
+            } else {
+                int mIndex = this.filePath.lastIndexOf(File.separator);
+                long mName = Long.parseLong(this.filePath.substring(mIndex + 1));
+                int oIndex = other.filePath.lastIndexOf(File.separator);
+                long oName = Long.parseLong(other.filePath.substring(oIndex + 1));
+                if (mName < oName) {
+                    return -1;
+                } else if (mName > oName) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }
+            // return this.fileSize < other.fileSize ? 1 : this.fileSize >
+            // other.fileSize ? -1 : 0;
+        }
+
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((filePath == null) ? 0 : filePath.hashCode());
+            result = prime * result + fileSize;
+            return result;
+        }
+
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            AllocateRequest other = (AllocateRequest) obj;
+            if (filePath == null) {
+                if (other.filePath != null)
+                    return false;
+            } else if (!filePath.equals(other.filePath))
+                return false;
+            if (fileSize != other.fileSize)
+                return false;
+            return true;
         }
     }
 }

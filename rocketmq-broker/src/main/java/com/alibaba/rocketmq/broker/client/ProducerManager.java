@@ -1,17 +1,18 @@
 /**
- * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.alibaba.rocketmq.broker.client;
 
@@ -37,8 +38,6 @@ import com.alibaba.rocketmq.remoting.common.RemotingUtil;
 
 
 /**
- * 管理Producer组及各个Producer连接
- *
  * @author shijia.wxr<vintage.wang@gmail.com>
  * @since 2013-7-26
  */
@@ -188,17 +187,18 @@ public class ProducerManager {
             
             if (this.hashcodeChannelLock.tryLock(LockTimeoutMillis, TimeUnit.MILLISECONDS)) {
                 try {
-                	List<ClientChannelInfo> channelList = this.hashcodeChannelTable.get(group);
+                    Integer groupHashCode = group.hashCode();
+                    List<ClientChannelInfo> channelList = this.hashcodeChannelTable.get(groupHashCode);
                     if (null == channelList) {
-                    	channelList = new ArrayList<ClientChannelInfo>();
-                        this.hashcodeChannelTable.put(group.hashCode(), channelList);
+                        channelList = new ArrayList<ClientChannelInfo>();
+                        this.hashcodeChannelTable.put(groupHashCode, channelList);
                     }
 
                     bClientChannelInfoFound = channelList.contains(clientChannelInfo);
                     if (!bClientChannelInfoFound) {
-                    	channelList.add(clientChannelInfo);
+                        channelList.add(clientChannelInfo);
                         log.info("new producer connected, group: {} group hashcode: {} channel: {}", group,
-                        		group.hashCode(),    clientChannelInfo.toString());
+                                groupHashCode,  clientChannelInfo.toString());
                     }
                 }
                 finally {
@@ -240,24 +240,24 @@ public class ProducerManager {
                 finally {
                     this.groupChannelLock.unlock();
                 }
-            }
-            else {
+            } else {
                 log.warn("ProducerManager unregisterProducer groupChannelLock timeout");
             }
             
             
             if (this.hashcodeChannelLock.tryLock(LockTimeoutMillis, TimeUnit.MILLISECONDS)) {
                 try {
-                	List<ClientChannelInfo> channelList = this.hashcodeChannelTable.get(group);
+                    Integer groupHashCode = group.hashCode();
+                    List<ClientChannelInfo> channelList = this.hashcodeChannelTable.get(groupHashCode);
                     if (null != channelList && !channelList.isEmpty()) {
                         boolean bRemove = channelList.remove(clientChannelInfo.getChannel());
                         if (bRemove) {
-                            log.info("unregister a producer[{}] from hashcodeChannelTable {}", group,
-                                clientChannelInfo.toString());
+                            log.info("unregister a producer[{}] from hashcodeChannelTable {}", clientChannelInfo.toString(),
+                                    group);
                         }
 
                         if (channelList.isEmpty()) {
-                            this.hashcodeChannelTable.remove(group);
+                            this.hashcodeChannelTable.remove(groupHashCode);
                             log.info("unregister a producer group[{}] from hashcodeChannelTable", group);
                         }
                     }
@@ -276,7 +276,7 @@ public class ProducerManager {
     }
 
 
-	public ClientChannelInfo pickProducerChannelRandomly(final int producerGroupHashCode) {
+    public ClientChannelInfo pickProducerChannelRandomly(final int producerGroupHashCode) {
         try {
             if (this.hashcodeChannelLock.tryLock(LockTimeoutMillis, TimeUnit.MILLISECONDS)) {
                 try {
@@ -302,8 +302,8 @@ public class ProducerManager {
 
         return null;
     }
-	
-	private int generateRandmonNum() {
+
+    private int generateRandmonNum() {
         int value = this.random.nextInt();
 
         if (value < 0) {
