@@ -1222,6 +1222,8 @@ public class DefaultMessageStore implements MessageStore {
         }
 
         this.recoverTopicQueueTable();
+
+        this.getTransactionStateService().recoverStateTable(lastExitOK);
     }
 
     public MessageStoreConfig getMessageStoreConfig() {

@@ -1041,11 +1041,15 @@ public class CommitLog {
                     queueOffset =
                             CommitLog.this.defaultMessageStore.getTransactionStateService()
                                     .getTranStateTableOffset().get();
+                    break;
                 case MessageSysFlag.TransactionRollbackType:
                     queueOffset = msgInner.getQueueOffset();
                     break;
                 case MessageSysFlag.TransactionNotType:
+                    break;
                 case MessageSysFlag.TransactionCommitType:
+                    queueOffset = msgInner.getQueueOffset();
+                    break;
                 default:
                     break;
             }
