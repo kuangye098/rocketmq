@@ -18,6 +18,7 @@ package com.alibaba.rocketmq.store.config;
 
 import com.alibaba.rocketmq.common.annotation.ImportantField;
 import com.alibaba.rocketmq.store.ConsumeQueue;
+import com.alibaba.rocketmq.store.transaction.TransactionStateService;
 
 import java.io.File;
 
@@ -111,7 +112,7 @@ public class MessageStoreConfig {
     private long flushDelayOffsetInterval = 1000 * 10;
     private String tranStateTableStorePath = System.getProperty("user.home") + File.separator + "store"
             + File.separator + "transaction" + File.separator + "statetable";
-    private int tranStateTableMapedFileSize = 2000000 * 1;// TransactionStateService.TSStoreUnitSize;
+    private int tranStateTableMapedFileSize = 2000000 * TransactionStateService.TSStoreUnitSize;
     private String tranRedoLogStorePath = System.getProperty("user.home") + File.separator + "store"
             + File.separator + "transaction" + File.separator + "redolog";
     private int tranRedoLogMapedFileSize = 2000000 * ConsumeQueue.CQStoreUnitSize;
