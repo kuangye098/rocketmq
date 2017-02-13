@@ -282,6 +282,7 @@ public class CommitLog {
             String keys = "";
             String uniqKey = null;
             String producerGroup = null;
+            long tranStateTableOffset = -1;
 
             // 17 properties
             short propertiesLength = byteBuffer.getShort();
@@ -324,6 +325,7 @@ public class CommitLog {
                     case MessageSysFlag.TransactionPreparedType:
                     case MessageSysFlag.TransactionRollbackType:
                         producerGroup =  propertiesMap.get(MessageConst.PROPERTY_PRODUCER_GROUP);
+                        tranStateTableOffset = Long.valueOf(propertiesMap.get(MessageConst.PROPERTY_TRAN_STATE_OFFSET));
                         break;
                 }
             }
@@ -354,7 +356,7 @@ public class CommitLog {
                 keys, // 8
                 uniqKey, //9
                 sysFlag, // 10
-                queueOffset,  // 11
+                tranStateTableOffset,  // 11
                 preparedTransactionOffset,// 12
                 producerGroup// 13
             );
@@ -1048,7 +1050,8 @@ public class CommitLog {
                 case MessageSysFlag.TransactionNotType:
                     break;
                 case MessageSysFlag.TransactionCommitType:
-                    queueOffset = msgInner.getQueueOffset();
+                 	MessageAccessor.putProperty(msgInner, 
+                 			MessageConst.PROPERTY_TRAN_STATE_OFFSET, String.valueOf(msgInner.getQueueOffset()));
                     break;
                 default:
                     break;
