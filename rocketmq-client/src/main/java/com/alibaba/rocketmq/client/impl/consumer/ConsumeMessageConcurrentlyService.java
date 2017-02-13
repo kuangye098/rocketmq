@@ -223,10 +223,10 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                 try {
                     this.consumeExecutor.submit(consumeRequest);
                 } catch (RejectedExecutionException e) {
-                    for (; total < msgs.size(); total++) {
-                        msgThis.add(msgs.get(total));
-                    }
-
+                    //for (; total < msgs.size(); total++) {
+                    //   msgThis.add(msgs.get(total));
+                    //}
+                    total = msgs.size();  //stop outer 'for' ,this may be use 'break' better.
                     this.submitConsumeRequestLater(consumeRequest);
                 }
             }

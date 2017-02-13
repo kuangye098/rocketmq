@@ -41,6 +41,8 @@ public class MessageConst {
     public static final String PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX = "UNIQ_KEY";
     public static final String PROPERTY_MAX_RECONSUME_TIMES = "MAX_RECONSUME_TIMES";
     public static final String PROPERTY_CONSUME_START_TIMESTAMP = "CONSUME_START_TIME";
+    public static final String PROPERTY_TRAN_STATE_OFFSET = "TRAN_STATE_OFFSET";
+
 
     public static final String KEY_SEPARATOR = " ";
 
@@ -69,5 +71,6 @@ public class MessageConst {
         systemKeySet.add(PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX);
         systemKeySet.add(PROPERTY_MAX_RECONSUME_TIMES);
         systemKeySet.add(PROPERTY_CONSUME_START_TIMESTAMP);
+        systemKeySet.add(PROPERTY_TRAN_STATE_OFFSET);
     }
 }
