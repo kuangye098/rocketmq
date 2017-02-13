@@ -1050,8 +1050,7 @@ public class CommitLog {
                 case MessageSysFlag.TransactionNotType:
                     break;
                 case MessageSysFlag.TransactionCommitType:
-                 	MessageAccessor.putProperty(msgInner, 
-                 			MessageConst.PROPERTY_TRAN_STATE_OFFSET, String.valueOf(msgInner.getQueueOffset()));
+                    MessageAccessor.putProperty(msgInner,MessageConst.PROPERTY_TRAN_STATE_OFFSET,String.valueOf(msgInner.getQueueOffset()));
                     break;
                 default:
                     break;
