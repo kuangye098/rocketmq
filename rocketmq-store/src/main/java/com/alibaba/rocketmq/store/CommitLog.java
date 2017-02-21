@@ -320,14 +320,17 @@ public class CommitLog {
                 final int tranType = MessageSysFlag.getTransactionValue(sysFlag);
                 switch (tranType) {
                     case MessageSysFlag.TransactionNotType:
+                         break;
+                    case MessageSysFlag.TransactionPreparedType:
+                        producerGroup =  propertiesMap.get(MessageConst.PROPERTY_PRODUCER_GROUP);
+                        tranStateTableOffset = queueOffset;
                         break;
                     case MessageSysFlag.TransactionCommitType:
-                    case MessageSysFlag.TransactionPreparedType:
                     case MessageSysFlag.TransactionRollbackType:
                         producerGroup =  propertiesMap.get(MessageConst.PROPERTY_PRODUCER_GROUP);
                         tranStateTableOffset = Long.valueOf(propertiesMap.get(MessageConst.PROPERTY_TRAN_STATE_OFFSET));
                         break;
-                }
+                 }
             }
 
 
@@ -1044,13 +1047,13 @@ public class CommitLog {
                             CommitLog.this.defaultMessageStore.getTransactionStateService()
                                     .getTranStateTableOffset().get();
                     break;
-                case MessageSysFlag.TransactionRollbackType:
-                    queueOffset = msgInner.getQueueOffset();
-                    break;
                 case MessageSysFlag.TransactionNotType:
                     break;
+                case MessageSysFlag.TransactionRollbackType:
                 case MessageSysFlag.TransactionCommitType:
+                    //see [endMessageTransaction(MessageExt msgExt),Put the following code in this method may better for gc]
                     MessageAccessor.putProperty(msgInner,MessageConst.PROPERTY_TRAN_STATE_OFFSET,String.valueOf(msgInner.getQueueOffset()));
+                    msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgInner.getProperties()));
                     break;
                 default:
                     break;
