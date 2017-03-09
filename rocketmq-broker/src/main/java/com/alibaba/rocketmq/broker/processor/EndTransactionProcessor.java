@@ -235,6 +235,7 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
 
         msgInner.setWaitStoreMsgOK(false);
         MessageAccessor.clearProperty(msgInner, MessageConst.PROPERTY_DELAY_TIME_LEVEL);
+        MessageAccessor.clearProperty(msgInner, MessageConst.PROPERTY_TRANSACTION_PREPARED);
 
         msgInner.setTopic(msgExt.getTopic());
         msgInner.setQueueId(msgExt.getQueueId());
