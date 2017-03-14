@@ -213,6 +213,8 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
 
         msgInner.setQueueId(queueIdInt);
         msgInner.setSysFlag(msgExt.getSysFlag());
+    	//clear the Transaction Flag
+        msgInner.setSysFlag(MessageSysFlag.resetTransactionValue(msgInner.getSysFlag(), MessageSysFlag.TransactionNotType));
         msgInner.setBornTimestamp(msgExt.getBornTimestamp());
         msgInner.setBornHost(msgExt.getBornHost());
         msgInner.setStoreHost(this.getStoreHost());
